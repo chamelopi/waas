@@ -1,0 +1,29 @@
+.fancy {
+    color: #7822aa;
+    font-size: 5em;
+    font-family: Arial;
+
+    position: absolute;
+    left: 30rem;
+    top: 10rem;
+
+    animation: effect 2s linear infinite;
+}
+
+.invisible {
+    display: none;
+}
+
+@keyframes effect {
+    0% {
+        color: #7822aa;
+    }
+
+    50% {
+        color: #22aa78;
+    }
+
+    100% {
+        color: #7822aa;
+    }
+}
