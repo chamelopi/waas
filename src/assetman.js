@@ -13,7 +13,6 @@ async function loadGLTFs(paths) {
     const loader = new GLTFLoader();
     const models = (await Promise.all(paths.map(path => loader.loadAsync(path))))
     .map(gltf => {
-        console.log(gltf);
         const model = gltf.scene.children[0];
         // Initial rotation fixes
         model.rotation.x = Math.PI / 2;

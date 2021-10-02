@@ -12,6 +12,7 @@ const getImageData = (img) => {
     return ctx.getImageData(0, 0, img.width, img.height);
 }
 
+// TODO: Provide height data for update logics?
 async function loadTerrain(heightmap) {
     const img = await new THREE.ImageLoader().loadAsync("assets/" + heightmap);
     const data = getImageData(img);

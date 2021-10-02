@@ -1,7 +1,8 @@
 import * as THREE from "three";
-import { loadSkybox, makeSkybox } from "./skybox";
+import { makeSkybox } from "./skybox";
 import { loadTextures, loadGLTFs } from "./assetman";
 import { loadTerrain } from "./terrain"
+import { CameraControls } from "./camera-controls";
 
 const scene = new THREE.Scene();
 
@@ -10,8 +11,9 @@ scene.add(ambientLight);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-camera.position.set(1, 4, 3);
-camera.rotation.set(-Math.PI / 6, 0, 0);
+camera.position.set(1, 5, 3);
+camera.rotation.set(-Math.PI / 5, 0, 0);
+const camControl = new CameraControls(camera);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -45,6 +47,7 @@ const texture = textures["assets/frog.png"];
 const frogMaterial = new THREE.MeshBasicMaterial({ map: texture });
 frogMaterial.transparent = true;
 
+// TODO: Add more 3d frogs throughout the scene
 const frog3d = models["assets/froggo.glb"];
 frog3d.material = new THREE.MeshBasicMaterial({ map: textures["assets/froggo.png"] });
 // To make it face the camera
@@ -58,7 +61,7 @@ const skybox = makeSkybox(textures, "assets/envmap_miramar", "miramar", "png");
 scene.add(skybox);
 
 // TODO: Replace with sth that textures better
-const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(20, 20),
+const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(16, 16),
     new THREE.MeshBasicMaterial({ map: textures["assets/water.png"], transparent: true, opacity: 0.65 }));
 water.position.y = 0.6;
 water.rotation.x = -Math.PI / 2;
@@ -81,8 +84,18 @@ scene.add(froggo2);
 let dir = new THREE.Vector2(0.01, 0.01);
 let vel = 0.015;
 let vel2 = 0.02;
+
+let lastframe = performance.now();
 // Main loop
 function animate() {
+    // calculate dt
+    const curframe = performance.now();
+    const dt = lastframe - curframe;
+    lastframe = curframe;
+
+    // Update camera
+    camControl.update(dt);
+
     // Update
     froggo.position.y += vel;
     if (froggo.position.y > 3.5) {
@@ -113,8 +126,11 @@ window.addEventListener("resize", () => {
 }, false);
 
 
-// TODOs:
-// - Camera controls (WASD movement, maybe zoom?)
-// - 
+// TODOs/Ideas:
+// - Terrain texturing! (this is going to be hard)
+// - Camera rotation, zoom?
+// - More realistic jumping for the frogs
+// - Allow update logic to be implemented more easily
+// - Some sort of scene graph? Do we need that?
 // - Use webpack to reduce distribution size
 //   - Bonus points if the loading screen only shows the site on wednesdays
