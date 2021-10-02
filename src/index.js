@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { loadSkybox, makeSkybox } from "./skybox";
 import { loadTextures, loadGLTFs } from "./assetman";
+import { loadTerrain } from "./terrain"
 
 const scene = new THREE.Scene();
 
@@ -16,17 +17,11 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-const cube = new THREE.Mesh(geometry, material);
-cube.scale.set(15, 15, 0.1);
-cube.position.set(0, 0, -10);
 
-scene.add(cube);
 
-// DEBUG
+// TODO: Is specifying paths explicitly maintainable?
 const textures = await loadTextures([
-    "frog.png", "froggo.png", "grass.png",
+    "frog.png", "froggo.png", "grass.png", "rock.jpg",
     "envmap_miramar/miramar_ft.png",
     "envmap_miramar/miramar_bk.png",
     "envmap_miramar/miramar_up.png",
@@ -35,11 +30,16 @@ const textures = await loadTextures([
     "envmap_miramar/miramar_lf.png",
 ].map(x => "assets/" + x));
 const models = await loadGLTFs(["assets/froggo.glb"]);
+const terrain = await loadTerrain("heightmap2.png");
 
 // Finished loading
 // TODO: Maybe display a spinning cube or sth
 document.querySelector("#text").classList.remove("invisible");
 document.querySelector("#loading").classList.add("invisible");
+
+// Add terrain
+terrain.material = new THREE.MeshBasicMaterial({ map: textures["assets/rock.jpg"] });
+scene.add(terrain);
 
 const texture = textures["assets/frog.png"];
 const frogMaterial = new THREE.MeshBasicMaterial({ map: texture });
@@ -49,14 +49,10 @@ const frog3d = models["assets/froggo.glb"];
 frog3d.material = new THREE.MeshBasicMaterial({ map: textures["assets/froggo.png"] });
 // To make it face the camera
 frog3d.rotation.z = -3*Math.PI / 8;
-frog3d.scale.set(2, 2, 2);
-frog3d.position.set(3, -1, -2);
+frog3d.scale.set(0.5, 0.5, 0.5);
+frog3d.position.set(2, 1, 0);
 
 scene.add(frog3d);
-
-const tetra = new THREE.Mesh(new THREE.TetrahedronGeometry(), new THREE.MeshBasicMaterial({ color: 0x45ff78 }));
-tetra.position.set(4, 2, 0);
-scene.add(tetra);
 
 const skybox = makeSkybox(textures, "assets/envmap_miramar", "miramar", "png");
 scene.add(skybox);
@@ -64,10 +60,11 @@ scene.add(skybox);
 const ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(50, 50), new THREE.MeshBasicMaterial({ map: textures["assets/grass.png"] }));
 ground.position.y = -2;
 ground.rotation.x = -Math.PI / 2;
-scene.add(ground);
+//scene.add(ground);
 
+const geometry = new THREE.BoxGeometry();
 const froggo = new THREE.Mesh(geometry, [frogMaterial, undefined, undefined, undefined, undefined, undefined]);
-froggo.position.set(2, 1, 0);
+froggo.position.set(2, 2, 0);
 froggo.rotation.set(0, -Math.PI/2, 0);
 scene.add(froggo);
 
@@ -98,10 +95,6 @@ function animate() {
     if (froggo2.position.y <= 1.0) {
         vel = 0.03;
     }
-
-    cube.rotation.z += 0.01;
-    
-    tetra.rotation.y += 0.002;
 
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
