@@ -7,6 +7,7 @@ const CAMERA_BACK = "s";
 const CAMERA_CLOCKWISE = "q";
 const CAMERA_COUNTERCLOCKWISE = "e";
 const CAMERA_ROT_RESET = " ";
+const CAMERA_ENABLE = "c";
 
 const CAMERA_SPEED = 0.005;
 const CAMERA_ROT_SPEED = 0.002 * Math.PI/4
@@ -52,6 +53,10 @@ export class CameraControls {
             const q = new THREE.Quaternion();
             q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -this.camera.rotation.y);
             this.camera.applyQuaternion(q);
+        }
+
+        if (ev.key == CAMERA_ENABLE) {
+            this.enabled = !this.enabled;
         }
     }
 

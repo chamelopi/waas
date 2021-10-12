@@ -14,6 +14,8 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 camera.position.set(1, 5, 3);
 camera.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 5);
 const camControl = new CameraControls(camera);
+// This is more like a "demo", camera controls are disabled at first but can be enabled for debug use
+camControl.enabled = false;
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
