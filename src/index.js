@@ -3,6 +3,7 @@ import { makeSkybox } from "./skybox";
 import { loadTextures, loadGLTFs } from "./assetman";
 import { loadTerrain } from "./terrain"
 import { CameraControls } from "./camera-controls";
+import { Path } from "three";
 
 const scene = new THREE.Scene();
 
@@ -49,6 +50,7 @@ scene.add(terrain);
 const texture = textures["assets/frog.png"];
 const frogMaterial = new THREE.MeshBasicMaterial({ map: texture });
 frogMaterial.transparent = true;
+const frogMaterialList = [frogMaterial, undefined, undefined, undefined, undefined, undefined];
 
 // Add multiple 3d froggos
 const frogPosRot = [
@@ -80,30 +82,34 @@ scene.add(frog3d);
 const skybox = makeSkybox(textures, "assets/envmap_miramar", "miramar", "png");
 scene.add(skybox);
 
-// TODO: Replace with sth that textures better
+// TODO: Replace with sth that textures better, maybe another indexed buffer geometry.
+// TODO: We could use even sin and cos to simulate small waves in a custom vertex shader
 const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(16, 16),
     new THREE.MeshBasicMaterial({ map: textures["assets/water.png"], transparent: true, opacity: 0.65 }));
 water.position.y = 0.6;
 water.rotation.x = -Math.PI / 2;
 scene.add(water);
 
+function create2dFrog(geom, mat, pos, rot, scale, vel) {
+    const froggo = new THREE.Mesh(geom, mat);
+    froggo.position.set(pos[0], pos[1], pos[2]);
+    froggo.rotation.set(rot[0], rot[1], rot[2]);
+    froggo.scale.set(scale[0], scale[1], scale[2]);
+    froggo.baseVelocity = vel;
+    froggo.velocity = froggo.baseVelocity;
+    return froggo;
+}
+
+// 2d frogs jumping in the background
 const geometry = new THREE.BoxGeometry();
-const froggo = new THREE.Mesh(geometry, [frogMaterial, undefined, undefined, undefined, undefined, undefined]);
-froggo.position.set(-0.9, 1, -7);
-froggo.rotation.set(0, -Math.PI / 2, 0);
+const froggo = create2dFrog(geometry, frogMaterialList, [-0.9, 1, -7], [0, -Math.PI / 2, 0], [1, 1, 1], 0.015);
 scene.add(froggo);
-
-const froggo2 = new THREE.Mesh(geometry, [frogMaterial, undefined, undefined, undefined, undefined, undefined]);
-froggo2.position.set(-8, 1, -5);
-froggo2.scale.set(2, 2, 2);
-froggo2.rotation.y = -Math.PI / 4;
+const froggo2 = create2dFrog(geometry, frogMaterialList, [-8, 1, -5], [0, -Math.PI / 4, 0], [2, 2, 2], 0.02);
 scene.add(froggo2);
+const froggo3 = create2dFrog(geometry, frogMaterialList, [3.5, 1, -7], [0, 3*Math.PI / 2, 0], [1.2, 1.2, 1.2], 0.017);
+scene.add(froggo3);
+const froggos = [froggo, froggo2, froggo3];
 
-// TODO: Third frog jumping
-
-let dir = new THREE.Vector2(0.01, 0.01);
-let vel = 0.015;
-let vel2 = 0.02;
 
 let lastframe = performance.now();
 // Main loop
@@ -116,21 +122,15 @@ function animate() {
     // Update camera
     camControl.update(dt);
 
-    // Update
-    froggo.position.y += vel;
-    if (froggo.position.y > 3.5) {
-        vel -= 0.05;
-    }
-    if (froggo.position.y <= 1.0) {
-        vel = 0.015;
-    }
-
-    froggo2.position.y += vel2;
-    if (froggo2.position.y > 3.5) {
-        vel2 -= 0.05;
-    }
-    if (froggo2.position.y <= 1.0) {
-        vel2 = 0.02;
+    // Update jumping frogs
+    for (const f of froggos) {
+        f.position.y += f.velocity;
+        if (f.position.y > 3.5) {
+            f.velocity -= 0.05;
+        }
+        if (f.position.y <= 1.0) {
+            f.velocity = f.baseVelocity;
+        }
     }
 
     requestAnimationFrame(animate);

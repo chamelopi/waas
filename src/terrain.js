@@ -13,6 +13,8 @@ const getImageData = (img) => {
 }
 
 // TODO: Provide height data for update logics?
+// TODO: Use a texture map to apply UVs specific to tileset for texturing
+// TODO: Attach custom shader material that blends textures of tiles together.
 async function loadTerrain(heightmap) {
     const img = await new THREE.ImageLoader().loadAsync("assets/" + heightmap);
     const data = getImageData(img);
@@ -27,9 +29,6 @@ async function loadTerrain(heightmap) {
 
             // Scale height to be between 0 and 1
             const heightValue = (data.data.at(dataIdx * 4) + data.data.at(dataIdx * 4 + 1) + data.data.at(dataIdx * 4 + 2)) / 127;
-            // if (data.data[dataIdx*4] > 0) {
-            //     debugger;
-            // }
 
             const idx = dataIdx * 3;
             // Vertices should be between 0 and 1
