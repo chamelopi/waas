@@ -24,6 +24,7 @@ document.body.appendChild(renderer.domElement);
 // TODO: Is specifying paths explicitly maintainable?
 const textures = await loadTextures([
     "frog.png", "froggo.png", "grass.png", "rock.jpg", "water.png",
+    "tileset.png",
     "envmap_miramar/miramar_ft.png",
     "envmap_miramar/miramar_bk.png",
     "envmap_miramar/miramar_up.png",
