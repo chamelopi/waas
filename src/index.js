@@ -36,7 +36,7 @@ const textures = await loadTextures([
     "envmap_miramar/miramar_lf.png",
 ].map(x => "assets/" + x));
 const models = await loadGLTFs(["assets/froggo.glb"]);
-const terrain = await loadTerrain("heightmap2.png");
+const [terrain, heightmap] = await loadTerrain("heightmap2.png");
 
 // Finished loading
 // TODO: Maybe display a spinning cube or sth
