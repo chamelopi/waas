@@ -52,6 +52,19 @@ const frogMaterial = new THREE.MeshBasicMaterial({ map: texture });
 frogMaterial.transparent = true;
 const frogMaterialList = [frogMaterial, undefined, undefined, undefined, undefined, undefined];
 
+// TODO: Refactor skybox + water mesh into 'basic env setup function'
+const skybox = makeSkybox(textures, "assets/envmap_miramar", "miramar", "png");
+scene.add(skybox);
+
+// TODO: Replace with sth that textures better, maybe another indexed buffer geometry.
+// TODO: We could use even sin and cos to simulate small waves in a custom vertex shader
+const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(16, 16),
+    new THREE.MeshBasicMaterial({ map: textures["assets/water.png"], transparent: true, opacity: 0.65 }));
+water.position.y = 0.6;
+water.rotation.x = -Math.PI / 2;
+scene.add(water);
+
+// TODO: Create objects based on config/map file or sth
 // Add multiple 3d froggos
 const frogPosRot = [
     [[2.5, 0.7, -0.5], [2 / 3 * Math.PI]],
@@ -79,17 +92,6 @@ for (let i = 0; i < frog3d.count; ++i) {
 
 scene.add(frog3d);
 
-const skybox = makeSkybox(textures, "assets/envmap_miramar", "miramar", "png");
-scene.add(skybox);
-
-// TODO: Replace with sth that textures better, maybe another indexed buffer geometry.
-// TODO: We could use even sin and cos to simulate small waves in a custom vertex shader
-const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(16, 16),
-    new THREE.MeshBasicMaterial({ map: textures["assets/water.png"], transparent: true, opacity: 0.65 }));
-water.position.y = 0.6;
-water.rotation.x = -Math.PI / 2;
-scene.add(water);
-
 function create2dFrog(geom, mat, pos, rot, scale, vel) {
     const froggo = new THREE.Mesh(geom, mat);
     froggo.position.set(pos[0], pos[1], pos[2]);
@@ -111,6 +113,7 @@ scene.add(froggo3);
 const froggos = [froggo, froggo2, froggo3];
 
 
+// TODO: Refactor into main loop + update func for certain types of game objects
 let lastframe = performance.now();
 // Main loop
 function animate() {
