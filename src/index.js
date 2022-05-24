@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { makeSkybox } from "./skybox";
 import { loadTextures, loadGLTFs } from "./assetman";
-import { loadTerrain } from "./terrain"
+import { HEIGHTMAP_TILE_SCALE, loadTerrain, randomPositionOnTerrain } from "./terrain"
 import { CameraControls } from "./camera-controls";
-import { Path } from "three";
+import { Doodads } from "/doodads.js";
 
 const scene = new THREE.Scene();
 
@@ -24,10 +24,11 @@ document.body.appendChild(renderer.domElement);
 
 
 
-// TODO: Is specifying paths explicitly maintainable?
+// TODO: Fetch file names via http (how?)
 const textures = await loadTextures([
     "frog.png", "froggo.png", "grass.png", "rock.jpg", "water.png",
     "tileset.png",
+    "ImphenziaPalette01.png",
     "envmap_miramar/miramar_ft.png",
     "envmap_miramar/miramar_bk.png",
     "envmap_miramar/miramar_up.png",
@@ -35,7 +36,7 @@ const textures = await loadTextures([
     "envmap_miramar/miramar_rt.png",
     "envmap_miramar/miramar_lf.png",
 ].map(x => "assets/" + x));
-const models = await loadGLTFs(["assets/froggo.glb"]);
+const models = await loadGLTFs(["assets/froggo.glb", "assets/tree.glb"]);
 const [terrain, heightmap] = await loadTerrain("heightmap2.png");
 
 // Finished loading
@@ -74,23 +75,17 @@ const frogPosRot = [
     [[0, 1.65, -2.7], [Math.PI]],
     [[4.5, 1.65, -2], [2 / 3 * Math.PI]],
 ];
-const frog3d = new THREE.InstancedMesh(
-    models["assets/froggo.glb"].geometry,
-    new THREE.MeshBasicMaterial({ map: textures["assets/froggo.png"] }),
-    frogPosRot.length
-);
-for (let i = 0; i < frog3d.count; ++i) {
-    let matrix = new THREE.Matrix4();
-    frog3d.getMatrixAt(i, matrix);
-    matrix.makeRotationY(frogPosRot[i][1]);
-    matrix.scale(new THREE.Vector3(0.5, 0.5, 0.5));
-    matrix.setPosition(...frogPosRot[i][0]);
-    frog3d.setMatrixAt(i, matrix);
-    // Note: This is relatively cheap, even when called every frame
-    frog3d.instanceMatrix.needsUpdate = true;
-}
 
-scene.add(frog3d);
+let container = new THREE.Group();
+container.position.set(-(heightmap.width * HEIGHTMAP_TILE_SCALE * 0.5), 0, -(heightmap.height * HEIGHTMAP_TILE_SCALE * 0.5));
+scene.add(container);
+
+const frog3d = new Doodads(models["assets/froggo.glb"].geometry, textures["assets/froggo.png"], scene);
+for (let i = 0; i < frogPosRot.length; ++i) {
+    frog3d.add(new THREE.Vector3(...frogPosRot[i][0]), frogPosRot[i][1], 0.5);
+    // Note: This is relatively cheap, even when called every frame
+    frog3d.setNeedsUpdate(true);
+}
 
 function create2dFrog(geom, mat, pos, rot, scale, vel) {
     const froggo = new THREE.Mesh(geom, mat);
@@ -100,6 +95,15 @@ function create2dFrog(geom, mat, pos, rot, scale, vel) {
     froggo.baseVelocity = vel;
     froggo.velocity = froggo.baseVelocity;
     return froggo;
+}
+
+// Create random trees
+const trees = new Doodads(models["assets/tree.glb"].geometry, textures["assets/ImphenziaPalette01.png"], container);
+function createTree(pos) {
+    trees.add(pos, Math.random() * 2 * Math.PI, 0.05);
+}
+for (let i = 0; i < 25; ++i) {
+    createTree(randomPositionOnTerrain(heightmap));
 }
 
 // 2d frogs jumping in the background
@@ -134,6 +138,11 @@ function animate() {
         if (f.position.y <= 1.0) {
             f.velocity = f.baseVelocity;
         }
+    }
+
+    // Add tree when t is pressed
+    if (camControl.keystate["t"]) {
+        createTree(randomPositionOnTerrain(heightmap));
     }
 
     requestAnimationFrame(animate);

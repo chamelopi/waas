@@ -12,7 +12,8 @@ const CAMERA_ENABLE = "c";
 const CAMERA_SPEED = 0.005;
 const CAMERA_ROT_SPEED = 0.002 * Math.PI/4
 
-const KEYS = [CAMERA_LEFT, CAMERA_RIGHT, CAMERA_FORWARD, CAMERA_BACK, CAMERA_CLOCKWISE, CAMERA_COUNTERCLOCKWISE, CAMERA_ROT_RESET];
+// TODO: Refactor key handlers into separate component
+const KEYS = [CAMERA_LEFT, CAMERA_RIGHT, CAMERA_FORWARD, CAMERA_BACK, CAMERA_CLOCKWISE, CAMERA_COUNTERCLOCKWISE, CAMERA_ROT_RESET, "t"];
 
 /**
  * Basic RTS camera control with WASD
@@ -48,11 +49,12 @@ export class CameraControls {
 
         // Special case: Rotation reset:
         if (ev.key == CAMERA_ROT_RESET) {
-            // FIXME: This does not reset correctly (rotation is still slightly off)
-            // Maybe construct an entirely new camera matrix?
-            const q = new THREE.Quaternion();
-            q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -this.camera.rotation.y);
-            this.camera.applyQuaternion(q);
+            // Dirty hack, this "reset" only works when applied several times in a row
+            for (let i = 0; i < 10; ++i) {
+                const q = new THREE.Quaternion();
+                q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -this.camera.rotation.y);
+                this.camera.applyQuaternion(q);
+            }
         }
 
         if (ev.key == CAMERA_ENABLE) {

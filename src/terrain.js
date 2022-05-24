@@ -13,6 +13,11 @@ const getImageData = (img) => {
     return ctx.getImageData(0, 0, img.width, img.height);
 }
 
+function getHeightValue(heightmapData, x, y) {
+    const dataIdx = (y * heightmapData.width + x);
+    return (heightmapData.data.at(dataIdx * 4) + heightmapData.data.at(dataIdx * 4 + 1) + heightmapData.data.at(dataIdx * 4 + 2)) / 127;
+}
+
 function createTerrainMesh(heightmapData) {
     let geometry = new THREE.BufferGeometry();
     // Create vertices from height map
@@ -23,7 +28,7 @@ function createTerrainMesh(heightmapData) {
             const dataIdx = (i * heightmapData.width + j);
 
             // Scale height to be between 0 and 1
-            const heightValue = (heightmapData.data.at(dataIdx * 4) + heightmapData.data.at(dataIdx * 4 + 1) + heightmapData.data.at(dataIdx * 4 + 2)) / 127;
+            const heightValue = getHeightValue(heightmapData, j, i);
 
             const idx = dataIdx * 3;
             // Vertices should be between 0 and 1
@@ -62,6 +67,12 @@ function createTerrainMesh(heightmapData) {
     return mesh;
 }
 
+function randomPositionOnTerrain(heightmapData) {
+    const x = heightmapData.width * Math.random();
+    const y = heightmapData.height * Math.random();
+    return new THREE.Vector3(x * HEIGHTMAP_TILE_SCALE, getHeightValue(heightmapData, Math.floor(x), Math.floor(y)), y * HEIGHTMAP_TILE_SCALE);
+}
+
 // TODO: Use a texture map to apply UVs specific to tileset for texturing
 // TODO: Attach custom shader material that blends textures of tiles together.
 async function loadTerrain(heightmap) {
@@ -75,5 +86,6 @@ async function loadTerrain(heightmap) {
 
 export {
     loadTerrain,
+    randomPositionOnTerrain,
     HEIGHTMAP_TILE_SCALE,
 }
