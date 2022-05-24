@@ -6,7 +6,6 @@ const makeSkybox = (textures, path, name, ext) => {
 
     for (const side of sides) {
         const filename = path + "/" + name + "_" + side + "." + ext;
-        console.log(filename);
         materials.push(new THREE.MeshBasicMaterial({
             // Log errors
             map: textures[filename],

@@ -12,41 +12,22 @@ const CAMERA_ENABLE = "c";
 const CAMERA_SPEED = 0.005;
 const CAMERA_ROT_SPEED = 0.002 * Math.PI/4
 
-// TODO: Refactor key handlers into separate component
-const KEYS = [CAMERA_LEFT, CAMERA_RIGHT, CAMERA_FORWARD, CAMERA_BACK, CAMERA_CLOCKWISE, CAMERA_COUNTERCLOCKWISE, CAMERA_ROT_RESET, "t"];
-
 /**
  * Basic RTS camera control with WASD
  */
 export class CameraControls {
 
-    constructor(camera) {
+    constructor(camera, controls) {
         /// Underlying THREE.Camera that is being controlled
         this.camera = camera;
-        /// Stores current key states for later update
-        this.keystate = {};
         /// Determines if the controls should be active or not 
         this.enabled = true;
+        this.controls = controls;
 
-        document.addEventListener("keydown", e => this.keyDownListener(e));
         document.addEventListener("keyup", e => this.keyUpListener(e));
     }
 
-    keyDownListener(ev) {
-        if (ev.defaultPrevented) return;
-    
-        if (KEYS.indexOf(ev.key) > -1) {
-            this.keystate[ev.key] = true;
-        }
-    }
-
     keyUpListener(ev) {
-        if (ev.defaultPrevented) return;
-    
-        if (KEYS.indexOf(ev.key) > -1) {
-            this.keystate[ev.key] = false;
-        }
-
         // Special case: Rotation reset:
         if (ev.key == CAMERA_ROT_RESET) {
             // Dirty hack, this "reset" only works when applied several times in a row
@@ -65,33 +46,34 @@ export class CameraControls {
     update(dt) {
         if (!this.enabled) return;
 
+        const keystate = this.controls.getKeyState();
         let dir = new THREE.Vector2(0, 0);
         let camdir = new THREE.Vector3(0, 0, 0);
-        this.camera.getWorldDirection(camdir); 
+        this.camera.getWorldDirection(camdir);
         let rot = 0;
 
-        if (this.keystate[CAMERA_LEFT]) {
+        if (keystate[CAMERA_LEFT]) {
             // Turn left: Swap X and Y and make X negative
             dir.x += -camdir.z;
             dir.y += camdir.x;
         }
-        if (this.keystate[CAMERA_RIGHT]) {
+        if (keystate[CAMERA_RIGHT]) {
             // Turn right: Swap X and Y, and make Y negative
             dir.x += camdir.z;
             dir.y += -camdir.x;
         }
-        if (this.keystate[CAMERA_FORWARD]) {
+        if (keystate[CAMERA_FORWARD]) {
             dir.x += -camdir.x;
             dir.y += -camdir.z;
         }
-        if (this.keystate[CAMERA_BACK]) {
+        if (keystate[CAMERA_BACK]) {
             dir.x += camdir.x;
             dir.y += camdir.z;
         }
-        if (this.keystate[CAMERA_CLOCKWISE]) {
+        if (keystate[CAMERA_CLOCKWISE]) {
             rot = -CAMERA_ROT_SPEED * dt;
         } 
-        if (this.keystate[CAMERA_COUNTERCLOCKWISE]) {
+        if (keystate[CAMERA_COUNTERCLOCKWISE]) {
             rot = CAMERA_ROT_SPEED * dt;
         }
 

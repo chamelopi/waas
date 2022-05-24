@@ -6,7 +6,13 @@ module.exports = {
     assets: { url: "/assets", static: true, resolve: false },
   },
   plugins: [
-    //["@snowpack/plugin-webpack"]
+    [
+      "@snowpack/plugin-run-script",
+      {
+        cmd: "node build-asset-list.js",
+        watch: "node build-asset-list.js",
+      }
+    ]
   ],
   packageOptions: {},
   devOptions: {},

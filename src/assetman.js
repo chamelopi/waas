@@ -21,7 +21,23 @@ async function loadGLTFs(paths) {
     return Object.fromEntries(zip(paths, models));
 }
 
+/**
+ * Dynamically loads all assets from the 'assets' directory, distinguished by type
+ * 
+ * Current supported types are `textures` and `models`
+ */
+async function loadAssets() {
+    // Retrieve list of assets (created dynamically during build process)
+    let response = await (await fetch("/assets/asset-list.json")).json();
+    
+    let models = await loadGLTFs(response.models);
+    let textures = await loadTextures(response.textures);
+
+    return [textures, models];
+}
+
 export {
     loadTextures,
     loadGLTFs,
+    loadAssets,
 }

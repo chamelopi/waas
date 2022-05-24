@@ -1,43 +1,34 @@
 import * as THREE from "three";
 import { makeSkybox } from "./skybox";
-import { loadTextures, loadGLTFs } from "./assetman";
+import { loadAssets } from "./assetman";
 import { HEIGHTMAP_TILE_SCALE, loadTerrain, randomPositionOnTerrain } from "./terrain"
 import { CameraControls } from "./camera-controls";
 import { Doodads } from "/doodads.js";
+import { Controls } from "./controls";
 
 const scene = new THREE.Scene();
 
 const ambientLight = new THREE.AmbientLight(0x111111);
 scene.add(ambientLight);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-camera.position.set(1, 5, 3);
-camera.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 5);
-const camControl = new CameraControls(camera);
-// This is more like a "demo", camera controls are disabled at first but can be enabled for debug use
-camControl.enabled = false;
-
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
+camera.position.set(1, 5, 3);
+camera.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 5);
+const controls = new Controls();
+const camControl = new CameraControls(camera, controls);
+// This is more like a "demo", camera controls are disabled at first but can be enabled for debug use
+camControl.enabled = false;
 
-// TODO: Fetch file names via http (how?)
-const textures = await loadTextures([
-    "frog.png", "froggo.png", "grass.png", "rock.jpg", "water.png",
-    "tileset.png",
-    "ImphenziaPalette01.png",
-    "envmap_miramar/miramar_ft.png",
-    "envmap_miramar/miramar_bk.png",
-    "envmap_miramar/miramar_up.png",
-    "envmap_miramar/miramar_dn.png",
-    "envmap_miramar/miramar_rt.png",
-    "envmap_miramar/miramar_lf.png",
-].map(x => "assets/" + x));
-const models = await loadGLTFs(["assets/froggo.glb", "assets/tree.glb"]);
+// Load assets
+const [textures, models] = await loadAssets();
 const [terrain, heightmap] = await loadTerrain("heightmap2.png");
+
+console.log(textures, models);
 
 // Finished loading
 // TODO: Maybe display a spinning cube or sth
@@ -105,6 +96,10 @@ function createTree(pos) {
 for (let i = 0; i < 25; ++i) {
     createTree(randomPositionOnTerrain(heightmap));
 }
+// Add a random tree when t is pressed
+controls.onKeyUp("t", () => {
+    createTree(randomPositionOnTerrain(heightmap));
+});
 
 // 2d frogs jumping in the background
 const geometry = new THREE.BoxGeometry();
@@ -138,11 +133,6 @@ function animate() {
         if (f.position.y <= 1.0) {
             f.velocity = f.baseVelocity;
         }
-    }
-
-    // Add tree when t is pressed
-    if (camControl.keystate["t"]) {
-        createTree(randomPositionOnTerrain(heightmap));
     }
 
     requestAnimationFrame(animate);
