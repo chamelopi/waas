@@ -26,10 +26,8 @@ const camControl = new CameraControls(camera, controls);
 camControl.enabled = false;
 
 // Load assets
-const [textures, models] = await loadAssets();
+const assets = await loadAssets();
 const [terrain, heightmap] = await loadTerrain("heightmap.png");
-
-console.log(textures, models);
 
 // Finished loading
 // TODO: Maybe display a spinning cube or sth
@@ -37,23 +35,31 @@ document.querySelector("#text").classList.remove("invisible");
 document.querySelector("#loading").classList.add("invisible");
 
 // Add terrain
-terrain.material = new THREE.MeshBasicMaterial({ map: textures["assets/rock.jpg"] });
+terrain.material = new THREE.ShaderMaterial({
+    uniforms: {
+        dirt: { value: assets.textures["assets/dirt.png"]},
+        sand: { value: assets.textures["assets/sand.jpg"]},
+        rock: { value: assets.textures["assets/rock.jpg"]},
+        grass: { value: assets.textures["assets/grass.png"]},
+    },
+    vertexShader: assets.shaders["assets/shaders/passthrough.glsl"],
+    fragmentShader: assets.shaders["assets/shaders/splat.glsl"],
+});
 scene.add(terrain);
 
 // TODO: Refactor skybox + water mesh into 'basic env setup function'
-const skybox = makeSkybox(textures, "assets/envmap_miramar", "miramar", "png");
+const skybox = makeSkybox(assets.textures, "assets/envmap_miramar", "miramar", "png");
 scene.add(skybox);
 
 // TODO: Replace with sth that textures better, maybe another indexed buffer geometry.
 // TODO: We could use even sin and cos to simulate small waves in a custom vertex shader
 const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64),
-    new THREE.MeshBasicMaterial({ map: textures["assets/water.png"], transparent: true, opacity: 0.65 }));
+    new THREE.MeshBasicMaterial({ map: assets.textures["assets/water.png"], transparent: true, opacity: 0.65 }));
 water.position.y = 0.6;
 water.rotation.x = -Math.PI / 2;
 scene.add(water);
 
 // TODO: Create objects based on config/map file or sth
-createFrogs(textures, models, scene);
 
 let container = new THREE.Group();
 container.position.set(-(heightmap.width * HEIGHTMAP_TILE_SCALE * 0.5), 0, -(heightmap.height * HEIGHTMAP_TILE_SCALE * 0.5));
@@ -61,16 +67,23 @@ scene.add(container);
 
 
 // Create random trees
-const trees = new Doodads(models["assets/tree.glb"].geometry, textures["assets/ImphenziaPalette01.png"], container);
+const trees = new Doodads(assets.models["assets/tree.glb"].geometry, assets.textures["assets/ImphenziaPalette01.png"], container);
 function createTree(pos) {
     trees.add(pos, Math.random() * 2 * Math.PI, 0.05);
 }
-for (let i = 0; i < 25; ++i) {
-    createTree(randomPositionOnTerrain(heightmap));
+function createRandomTree(heightmap) {
+    let pos;
+    do {
+        pos = randomPositionOnTerrain(heightmap);
+    } while (pos.y < 0.6);
+    createTree(pos);
+}
+for (let i = 0; i < 100; ++i) {
+    createRandomTree(heightmap);
 }
 // Add a random tree when t is pressed
 controls.onKeyUp("t", () => {
-    createTree(randomPositionOnTerrain(heightmap));
+    createRandomTree(heightmap);
 });
 
 
@@ -85,8 +98,6 @@ function animate() {
 
     // Update camera
     camControl.update(dt);
-
-    updateFrogs();
 
     requestAnimationFrame(animate);
     renderer.render(scene, camera);

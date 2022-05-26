@@ -3,6 +3,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 const zip = (...rows) => [...rows[0]].map((_, c) => rows.map(row => row[c]));
 
+// TODO: Strip `assets/` part of path
+
 async function loadTextures(paths) {
     const loader = new THREE.TextureLoader();
     const textures = await Promise.all(paths.map(path => loader.loadAsync(path)));
@@ -14,11 +16,16 @@ async function loadGLTFs(paths) {
     const models = (await Promise.all(paths.map(path => loader.loadAsync(path))))
     .map(gltf => {
         const model = gltf.scene.children[0];
-        // Initial rotation fixes
-        model.rotation.x = Math.PI / 2;
         return model;
     });
     return Object.fromEntries(zip(paths, models));
+}
+
+async function loadTextFiles(paths) {
+    const loader = new THREE.FileLoader();
+    const files = (await Promise.all(paths.map(path => loader.loadAsync(path))));
+
+    return Object.fromEntries(zip(paths, files));
 }
 
 /**
@@ -30,10 +37,11 @@ async function loadAssets() {
     // Retrieve list of assets (created dynamically during build process)
     let response = await (await fetch("/assets/asset-list.json")).json();
     
-    let models = await loadGLTFs(response.models);
-    let textures = await loadTextures(response.textures);
-
-    return [textures, models];
+    return {
+        models: await loadGLTFs(response.models),
+        textures: await loadTextures(response.textures),
+        shaders: await loadTextFiles(response.shaders),
+    };
 }
 
 export {

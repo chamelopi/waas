@@ -10,10 +10,12 @@ const ASSET_DIR = "assets";
 const ASSET_LIST = `${ASSET_DIR}/asset-list.json`;
 const MODEL_EXTENSIONS = [".glb", ".gltf"];
 const TEXTURE_EXTENSIONS = [".png", ".jpg", ".jpeg"];
+const SHADER_EXTENSIONS = [".glsl"];
 
 let assetData = {
     models: [],
     textures: [],
+    shaders: [],
 };
 
 const isType = (dirent, extensionList) => {
@@ -33,6 +35,8 @@ const dirHandler = (curdir, dirent) => {
             assetData.models.push(fullName);
         } else if (isType(dirent, TEXTURE_EXTENSIONS)) {
             assetData.textures.push(fullName);
+        } else if (isType(dirent, SHADER_EXTENSIONS)) {
+            assetData.shaders.push(fullName);
         }
     }
 }
@@ -41,3 +45,5 @@ let contents = fs.readdirSync(ASSET_DIR, { withFileTypes: true });
 contents.forEach(entry => dirHandler(ASSET_DIR, entry));
 
 fs.writeFileSync(ASSET_LIST, JSON.stringify(assetData));
+
+console.log("Asset lsit updated!");
