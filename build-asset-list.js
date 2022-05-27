@@ -46,4 +46,4 @@ contents.forEach(entry => dirHandler(ASSET_DIR, entry));
 
 fs.writeFileSync(ASSET_LIST, JSON.stringify(assetData));
 
-console.log("Asset lsit updated!");
+console.log("Asset list updated!");

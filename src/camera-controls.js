@@ -85,5 +85,6 @@ export class CameraControls {
 
         this.camera.position.x += dir.x * CAMERA_SPEED * dt;
         this.camera.position.z += dir.y * CAMERA_SPEED * dt;
+        // TODO: Set height based on terrain, so that we can look on the top of high mountains etc.
     }
 }

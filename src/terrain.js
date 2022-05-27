@@ -1,9 +1,9 @@
 import * as THREE from "three";
 
 const HEIGHTMAP_TILE_SCALE = 0.1;
+const HEIGHTMAP_HEIGHT_SCALE = 6.0;
 
 const getImageData = (img) => {
-    // TODO: Is there a better way?
     // Canvas is not added to DOM and therefore cleaned up on exit
     const cv = document.createElement("canvas");
     cv.width = img.width;
@@ -15,7 +15,8 @@ const getImageData = (img) => {
 
 function getHeightValue(heightmapData, x, y) {
     const dataIdx = (y * heightmapData.width + x);
-    return (heightmapData.data.at(dataIdx * 4) + heightmapData.data.at(dataIdx * 4 + 1) + heightmapData.data.at(dataIdx * 4 + 2)) / 127;
+    // Greyscale, it does not matter
+    return heightmapData.data.at(dataIdx * 4) / 255 * HEIGHTMAP_HEIGHT_SCALE;
 }
 
 function createTerrainMesh(heightmapData) {
@@ -27,7 +28,6 @@ function createTerrainMesh(heightmapData) {
         for (let j = 0; j < heightmapData.width; ++j) {
             const dataIdx = (i * heightmapData.width + j);
 
-            // Scale height to be between 0 and 1
             const heightValue = getHeightValue(heightmapData, j, i);
 
             const idx = dataIdx * 3;
@@ -73,13 +73,25 @@ function randomPositionOnTerrain(heightmapData) {
     return new THREE.Vector3(x * HEIGHTMAP_TILE_SCALE, getHeightValue(heightmapData, Math.floor(x), Math.floor(y)), y * HEIGHTMAP_TILE_SCALE);
 }
 
-// TODO: Use a texture map to apply UVs specific to tileset for texturing
-// TODO: Attach custom shader material that blends textures of tiles together.
-async function loadTerrain(heightmap) {
+async function loadTerrain(heightmap, assets) {
     const img = await new THREE.ImageLoader().loadAsync("assets/" + heightmap);
     const data = getImageData(img);
 
     const mesh = createTerrainMesh(data);
+
+    // Initialize terrain shader (blends textures based on height)
+    mesh.material = new THREE.ShaderMaterial({
+        uniforms: {
+            // TODO: Use a texture map instead of the height value? This would possibly allow for more flexible texturing, too
+            dirt: { value: assets.textures["assets/dirt.png"]},
+            sand: { value: assets.textures["assets/sand.jpg"]},
+            rock: { value: assets.textures["assets/rock.jpg"]},
+            grass: { value: assets.textures["assets/grass.png"]},
+            heightScale: { value: HEIGHTMAP_HEIGHT_SCALE }
+        },
+        vertexShader: assets.shaders["assets/shaders/passthrough.glsl"],
+        fragmentShader: assets.shaders["assets/shaders/splat.glsl"],
+    });
 
     return [mesh, data];
 }
@@ -88,4 +100,5 @@ export {
     loadTerrain,
     randomPositionOnTerrain,
     HEIGHTMAP_TILE_SCALE,
+    HEIGHTMAP_HEIGHT_SCALE,
 }
