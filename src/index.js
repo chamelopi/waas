@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { makeSkybox } from "./skybox";
 import { loadAssets } from "./assetman";
-import { HEIGHTMAP_TILE_SCALE, HEIGHTMAP_HEIGHT_SCALE, loadTerrain, randomPositionOnTerrain } from "./terrain"
+import { HEIGHTMAP_TILE_SCALE, loadTerrain, randomPositionOnTerrain } from "./terrain"
 import { CameraControls } from "./camera-controls";
 import { Doodads } from "/doodads.js";
 import { Controls } from "./controls";
