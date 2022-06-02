@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { makeSkybox } from "./skybox";
 import { loadAssets } from "./assetman";
-import { HEIGHTMAP_TILE_SCALE, loadTerrain, randomPositionOnTerrain } from "./terrain"
+import { HEIGHTMAP_TILE_SCALE, loadTerrain, randomPositionOnTerrain, getCenterOfTerrain } from "./terrain"
 import { CameraControls } from "./camera-controls";
 import { Doodads } from "/doodads.js";
 import { Controls } from "./controls";
@@ -33,8 +33,9 @@ document.querySelector("#loading").classList.add("invisible");
 // Add terrain
 scene.add(terrain);
 // Move camera to center of terrain
-camera.position.x = +(heightmap.width * HEIGHTMAP_TILE_SCALE * 0.5);
-camera.position.z = +(heightmap.height * HEIGHTMAP_TILE_SCALE * 0.5);
+const center = getCenterOfTerrain(heightmap);
+camera.position.x = center[0];
+camera.position.z = center[1];
 
 // TODO: Refactor skybox + water mesh into 'basic env setup function'
 const skybox = makeSkybox(assets.textures, "assets/envmap_miramar", "miramar", "png");

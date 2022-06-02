@@ -13,6 +13,13 @@ const getImageData = (img) => {
     return ctx.getImageData(0, 0, img.width, img.height);
 }
 
+function getCenterOfTerrain(heightmapData) {
+    return [
+        heightmapData.width * HEIGHTMAP_TILE_SCALE * 0.5,
+        heightmapData.height * HEIGHTMAP_TILE_SCALE * 0.5
+    ];
+}
+
 function getHeightValue(heightmapData, x, y) {
     const dataIdx = (y * heightmapData.width + x);
     // Greyscale, it does not matter
@@ -109,6 +116,7 @@ export {
     loadTerrain,
     getHeightFromPosition,
     randomPositionOnTerrain,
+    getCenterOfTerrain,
     HEIGHTMAP_TILE_SCALE,
     HEIGHTMAP_HEIGHT_SCALE,
 }
