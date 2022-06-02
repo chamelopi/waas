@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 // Manages several doodad objects (of a single type/model)
-// Doodads are static objects that don't move
+// Doodads are static objects that don't move, so mesh instancing makes sense here to reduce draw calls
 class Doodads {
     constructor(geometry, texture, scene) {
         this.geometry = geometry;
@@ -14,6 +14,7 @@ class Doodads {
 
     buildMesh() {
         this.mesh = new THREE.InstancedMesh(this.geometry, this.material, this.matrices.length);
+        this.mesh.castShadow = true;
         for (let i = 0; i < this.matrices.length; ++i) {
             this.mesh.setMatrixAt(i, this.matrices[i]);
         }
@@ -25,7 +26,7 @@ class Doodads {
         this.mesh.instanceMatrix.needsUpdate = needsUpdate;
     }
 
-    add(pos, rotationY, scale, baseMatrix) {
+    add(pos, rotationY, scale) {
         // Need to be in this order
         let matrix = new THREE.Matrix4();
         if (rotationY) {

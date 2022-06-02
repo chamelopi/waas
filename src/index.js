@@ -31,8 +31,10 @@ const [terrain, heightmap] = await loadTerrain("heightmap.png", assets);
 document.querySelector("#loading").classList.add("invisible");
 
 // Add terrain
-
 scene.add(terrain);
+// Move camera to center of terrain
+camera.position.x = +(heightmap.width * HEIGHTMAP_TILE_SCALE * 0.5);
+camera.position.z = +(heightmap.height * HEIGHTMAP_TILE_SCALE * 0.5);
 
 // TODO: Refactor skybox + water mesh into 'basic env setup function'
 const skybox = makeSkybox(assets.textures, "assets/envmap_miramar", "miramar", "png");
@@ -41,20 +43,16 @@ scene.add(skybox);
 // TODO: We could use sin and cos to simulate small waves in a custom vertex shader
 const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64),
     new THREE.MeshBasicMaterial({ map: assets.textures["assets/water.png"], transparent: true, opacity: 0.65 }));
-water.position.y = 0.6;
+water.position.set(32, 0.6, 32);
 water.rotation.x = -Math.PI / 2;
 scene.add(water);
 
 // TODO: Create objects based on config/map file or sth
-
 let container = new THREE.Group();
-// TODO: We should not need to know about this offset
-container.position.set(-(heightmap.width * HEIGHTMAP_TILE_SCALE * 0.5), 0, -(heightmap.height * HEIGHTMAP_TILE_SCALE * 0.5));
 scene.add(container);
 
-
 // Create random trees
-const trees = new Doodads(assets.models["assets/tree.glb"].geometry, assets.textures["assets/ImphenziaPalette01.png"], container);
+const trees = new Doodads(assets.getMesh("assets/tree.glb"), assets.textures["assets/ImphenziaPalette01.png"], container);
 function createTree(pos) {
     trees.add(pos, Math.random() * 2 * Math.PI, 0.05);
 }
@@ -80,11 +78,13 @@ let lastframe = performance.now();
 function animate() {
     // calculate dt
     const curframe = performance.now();
-    const dt = lastframe - curframe;
+    const dt = curframe - lastframe;
     lastframe = curframe;
 
     // Update camera
-    camControl.update(dt);
+    camControl.update(dt, heightmap);
+    // Needs dt in seconds
+    assets.mixers.forEach(mixer => mixer.update(dt / 1000));
 
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
@@ -99,6 +99,9 @@ window.addEventListener("resize", () => {
 }, false);
 
 
-// TODOs/Ideas:
+// Next TODOs/Ideas:
+// - Animate the sheep I made (walk, eat grass, idle)
+// - Add some animated sheep to the world, walking around avoiding water and steep cliffs
+//
 // - Allow update logic to be implemented more easily
 // - Use webpack to reduce distribution size

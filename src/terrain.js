@@ -19,6 +19,16 @@ function getHeightValue(heightmapData, x, y) {
     return heightmapData.data.at(dataIdx * 4) / 255 * HEIGHTMAP_HEIGHT_SCALE;
 }
 
+function getHeightFromPosition(heightmapData, x, y) {
+    x = Math.floor(x / HEIGHTMAP_TILE_SCALE);
+    y = Math.floor(y / HEIGHTMAP_TILE_SCALE);
+    if (x >= 0 && x < heightmapData.width && y >= 0 && y < heightmapData.height) {
+        return getHeightValue(heightmapData, x, y);
+    } else {
+        return 0;
+    }
+}
+
 function createTerrainMesh(heightmapData) {
     let geometry = new THREE.BufferGeometry();
     // Create vertices from height map
@@ -63,7 +73,6 @@ function createTerrainMesh(heightmapData) {
     geometry.setIndex(indices);
     const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x42ff42, wireframe: false }));
     // Center around origin
-    mesh.position.set(-(heightmapData.width * HEIGHTMAP_TILE_SCALE * 0.5), 0, -(heightmapData.height * HEIGHTMAP_TILE_SCALE * 0.5));
     return mesh;
 }
 
@@ -98,6 +107,7 @@ async function loadTerrain(heightmap, assets) {
 
 export {
     loadTerrain,
+    getHeightFromPosition,
     randomPositionOnTerrain,
     HEIGHTMAP_TILE_SCALE,
     HEIGHTMAP_HEIGHT_SCALE,

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { getHeightFromPosition } from "./terrain";
 
 const CAMERA_LEFT = "a";
 const CAMERA_RIGHT = "d";
@@ -11,6 +12,7 @@ const CAMERA_ENABLE = "c";
 
 const CAMERA_SPEED = 0.005;
 const CAMERA_ROT_SPEED = 0.002 * Math.PI/4
+const CAMERA_Y_OFFSET = 2;
 
 /**
  * Basic RTS camera control with WASD
@@ -43,7 +45,7 @@ export class CameraControls {
         }
     }
 
-    update(dt) {
+    update(dt, heightdata) {
         if (!this.enabled) return;
 
         const keystate = this.controls.getKeyState();
@@ -54,27 +56,27 @@ export class CameraControls {
 
         if (keystate[CAMERA_LEFT]) {
             // Turn left: Swap X and Y and make X negative
-            dir.x += -camdir.z;
-            dir.y += camdir.x;
-        }
-        if (keystate[CAMERA_RIGHT]) {
-            // Turn right: Swap X and Y, and make Y negative
             dir.x += camdir.z;
             dir.y += -camdir.x;
         }
-        if (keystate[CAMERA_FORWARD]) {
-            dir.x += -camdir.x;
-            dir.y += -camdir.z;
+        if (keystate[CAMERA_RIGHT]) {
+            // Turn right: Swap X and Y, and make Y negative
+            dir.x += -camdir.z;
+            dir.y += camdir.x;
         }
-        if (keystate[CAMERA_BACK]) {
+        if (keystate[CAMERA_FORWARD]) {
             dir.x += camdir.x;
             dir.y += camdir.z;
         }
+        if (keystate[CAMERA_BACK]) {
+            dir.x += -camdir.x;
+            dir.y += -camdir.z;
+        }
         if (keystate[CAMERA_CLOCKWISE]) {
-            rot = -CAMERA_ROT_SPEED * dt;
+            rot = CAMERA_ROT_SPEED * dt;
         } 
         if (keystate[CAMERA_COUNTERCLOCKWISE]) {
-            rot = CAMERA_ROT_SPEED * dt;
+            rot = -CAMERA_ROT_SPEED * dt;
         }
 
         const q = new THREE.Quaternion();
@@ -83,8 +85,13 @@ export class CameraControls {
 
         dir = dir.normalize();
 
+        // TODO: Clamp camera to terrain
+
         this.camera.position.x += dir.x * CAMERA_SPEED * dt;
         this.camera.position.z += dir.y * CAMERA_SPEED * dt;
-        // TODO: Set height based on terrain, so that we can look on the top of high mountains etc.
+
+        // Set height based on terrain, so that we can look on the top of high mountains etc.
+        let height = getHeightFromPosition(heightdata, this.camera.position.x, this.camera.position.z);
+        this.camera.position.y = height > 0 ? height + CAMERA_Y_OFFSET : CAMERA_Y_OFFSET;
     }
 }
