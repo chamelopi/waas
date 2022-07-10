@@ -3,9 +3,10 @@ import { makeSkybox } from "./skybox";
 import { loadAssets } from "./assetman";
 import { loadTerrain, randomPositionOnTerrain, getCenterOfTerrain } from "./terrain/terrain"
 import { CameraControls } from "./camera-controls";
-import { Doodads } from "/doodads.js";
+import { Doodads } from "./doodads";
 import { Controls } from "./controls";
 import { GUIManager } from "./ui/gui-manager";
+import { computeShader } from "./terrain/compute-shader";
 
 const scene = new THREE.Scene();
 
@@ -40,12 +41,12 @@ camera.position.x = center[0];
 camera.position.z = center[1];
 
 // TODO: Refactor skybox + water mesh into 'basic env setup function'
-const skybox = makeSkybox(assets.textures, "assets/envmap_miramar", "miramar", "png");
+const skybox = makeSkybox(assets.textures, "envmap_miramar", "miramar", "png");
 scene.add(skybox);
 
 // TODO: We could use sin and cos to simulate small waves in a custom vertex shader
 const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64),
-    new THREE.MeshBasicMaterial({ map: assets.textures["assets/water.png"], transparent: true, opacity: 0.65 }));
+    new THREE.MeshBasicMaterial({ map: assets.textures["water.png"], transparent: true, opacity: 0.65 }));
 water.position.set(32, 0.6, 32);
 water.rotation.x = -Math.PI / 2;
 scene.add(water);
@@ -55,7 +56,7 @@ let container = new THREE.Group();
 scene.add(container);
 
 // Create random trees
-const trees = new Doodads(assets.getMesh("assets/tree.glb"), assets.textures["assets/ImphenziaPalette01.png"], container);
+const trees = new Doodads(assets.getMesh("tree.glb"), assets.textures["ImphenziaPalette01.png"], container);
 function createTree(pos) {
     trees.add(pos, Math.random() * 2 * Math.PI, 0.05);
 }
@@ -77,6 +78,14 @@ controls.onKeyUp("t", () => {
 let guiMan = new GUIManager(controls);
 guiMan.show("map-editor");
 
+
+/*
+let arr = new Uint8Array(1024);
+arr.fill(100, 0, 512);
+arr.fill(200, 513, 1023);
+let result = computeShader(renderer, arr, new THREE.Vector2(32, 32), "red", assets);
+console.log(results);
+*/
 
 // TODO: Refactor into main loop + update func for certain types of game objects
 let lastframe = performance.now();

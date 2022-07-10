@@ -3,13 +3,13 @@
 ## Local dev environment
 
 ```
-npx snowpack dev
+npm run dev
 ```
 
 ## Building for production
 
 ```
-npx snowpack build
+npm run build
 ```
 
 ### Next TODOs

@@ -100,14 +100,14 @@ async function loadTerrain(heightmap, assets) {
     mesh.material = new THREE.ShaderMaterial({
         uniforms: {
             // TODO: Use a texture map instead of the height value? This would possibly allow for more flexible texturing, too
-            dirt: { value: assets.textures["assets/dirt.png"]},
-            sand: { value: assets.textures["assets/sand.jpg"]},
-            rock: { value: assets.textures["assets/rock.jpg"]},
-            grass: { value: assets.textures["assets/grass.png"]},
+            dirt: { value: assets.textures["dirt.png"]},
+            sand: { value: assets.textures["sand.jpg"]},
+            rock: { value: assets.textures["rock.jpg"]},
+            grass: { value: assets.textures["grass.png"]},
             heightScale: { value: HEIGHTMAP_HEIGHT_SCALE }
         },
-        vertexShader: assets.shaders["assets/shaders/passthrough.glsl"],
-        fragmentShader: assets.shaders["assets/shaders/splat.glsl"],
+        vertexShader: assets.shaders["shaders/passthrough.glsl"],
+        fragmentShader: assets.shaders["shaders/splat.glsl"],
     });
 
     return [mesh, data];

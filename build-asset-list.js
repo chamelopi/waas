@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ASSET_DIR = "assets";
+const ASSET_DIR = "dist/assets";
 const ASSET_LIST = `${ASSET_DIR}/asset-list.json`;
 const MODEL_EXTENSIONS = [".glb", ".gltf"];
 const TEXTURE_EXTENSIONS = [".png", ".jpg", ".jpeg"];
@@ -22,8 +22,17 @@ const isType = (dirent, extensionList) => {
     return extensionList.indexOf(path.extname(dirent.name)) > -1
 };
 
+const stripBasePath = (path) => {
+    return path.replace(ASSET_DIR, "");
+}
+
 // Walk asset dir and list all files based on their type
 const dirHandler = (curdir, dirent) => {
+    const relativeName = path.join(stripBasePath(curdir), dirent.name)
+        // Replace backslash with forward slash on windows
+        .replace(/\\/g, "/")
+        // Remove leading slash
+        .replace(/^\//, "");
     const fullName = `${curdir}/${dirent.name}`;
     if (dirent.isDirectory()) {
         // Recurse into directories
@@ -32,11 +41,11 @@ const dirHandler = (curdir, dirent) => {
     } else if (dirent.isFile()) {
         // Distinguish known file types
         if (isType(dirent, MODEL_EXTENSIONS)) {
-            assetData.models.push(fullName);
+            assetData.models.push(relativeName);
         } else if (isType(dirent, TEXTURE_EXTENSIONS)) {
-            assetData.textures.push(fullName);
+            assetData.textures.push(relativeName);
         } else if (isType(dirent, SHADER_EXTENSIONS)) {
-            assetData.shaders.push(fullName);
+            assetData.shaders.push(relativeName);
         }
     }
 }
