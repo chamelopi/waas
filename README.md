@@ -11,3 +11,7 @@ npx snowpack dev
 ```
 npx snowpack build
 ```
+
+### Next TODOs
+- Fix lighting (HemisphereLight cannot cast shadow, our terrain shader does respect light atm)
+- Show FPS

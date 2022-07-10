@@ -27,3 +27,16 @@
         color: #7822aa;
     }
 }
+
+/**
+ * Classes for UI elements
+ */
+
+.ui-base {
+    position: absolute;
+}
+
+.ui-top-right {
+    left: 1em;
+    top: 1em;
+}

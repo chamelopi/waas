@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { makeSkybox } from "./skybox";
 import { loadAssets } from "./assetman";
-import { HEIGHTMAP_TILE_SCALE, loadTerrain, randomPositionOnTerrain, getCenterOfTerrain } from "./terrain"
+import { loadTerrain, randomPositionOnTerrain, getCenterOfTerrain } from "./terrain/terrain"
 import { CameraControls } from "./camera-controls";
 import { Doodads } from "/doodads.js";
 import { Controls } from "./controls";
+import { GUIManager } from "./ui/gui-manager";
 
 const scene = new THREE.Scene();
 
@@ -17,8 +18,9 @@ document.body.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-camera.position.set(1, 5, 3);
-camera.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 5);
+// Y is set later based on terrain height
+camera.position.set(1, 0, 3);
+camera.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 4);
 const controls = new Controls();
 const camControl = new CameraControls(camera, controls);
 
@@ -72,6 +74,9 @@ controls.onKeyUp("t", () => {
     createRandomTree(heightmap);
 });
 
+let guiMan = new GUIManager(controls);
+guiMan.show("map-editor");
+
 
 // TODO: Refactor into main loop + update func for certain types of game objects
 let lastframe = performance.now();
@@ -87,6 +92,8 @@ function animate() {
     // Needs dt in seconds
     assets.mixers.forEach(mixer => mixer.update(dt / 1000));
 
+    guiMan.update(dt);
+
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
@@ -98,11 +105,3 @@ window.addEventListener("resize", () => {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }, false);
-
-
-// Next TODOs/Ideas:
-// - Animate the sheep I made (walk, eat grass, idle)
-// - Add some animated sheep to the world, walking around avoiding water and steep cliffs
-//
-// - Allow update logic to be implemented more easily
-// - Use webpack to reduce distribution size

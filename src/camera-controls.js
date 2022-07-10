@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { getHeightFromPosition } from "./terrain";
+import { getHeightFromPosition } from "./terrain/terrain";
 
 const CAMERA_LEFT = "a";
 const CAMERA_RIGHT = "d";
@@ -12,7 +12,7 @@ const CAMERA_ENABLE = "c";
 
 const CAMERA_SPEED = 0.005;
 const CAMERA_ROT_SPEED = 0.002 * Math.PI/4
-const CAMERA_Y_OFFSET = 2;
+const CAMERA_Y_OFFSET = 3;
 
 /**
  * Basic RTS camera control with WASD

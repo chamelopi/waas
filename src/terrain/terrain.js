@@ -79,6 +79,7 @@ function createTerrainMesh(heightmapData) {
     geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
     geometry.setIndex(indices);
     const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x42ff42, wireframe: false }));
+    mesh.receiveShadow = true;
     // Center around origin
     return mesh;
 }
