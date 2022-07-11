@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 
+// TODO: Refactor into class
+// - use dependency injection for renderer, assets
+// - reuse renderer for sequential computations
+// - allow passing of additional uniforms
 export function computeOnGpu(renderer: THREE.WebGLRenderer, data: Uint32Array, dims: THREE.Vector2, shaderName: string, assets: any): Uint32Array {
     if (data.length != dims.x * dims.y) {
         throw new Error(`Dimensions ${dims.x}/${dims.y} do not match data array length ${data.length}!`);
@@ -30,7 +34,6 @@ export function computeOnGpu(renderer: THREE.WebGLRenderer, data: Uint32Array, d
     const uniforms = {
         inputTexture: { value: inTexture },
         size: { value: dims },
-        // TODO: Add other uniforms as necessary
     }
 
     const shader = assets.shaders["shaders/" + shaderName + ".glsl"];
