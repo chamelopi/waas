@@ -1,8 +1,9 @@
-uniform sampler2D inputTexture;
 uniform vec2 size;
 
-varying vec2 uv;
+out vec2 vUv;
 
 void main() {
-    uv = position.xy / size;
+    vUv = position.xy / size;
+    // Need this to be able to write output in frag shader (?)
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }

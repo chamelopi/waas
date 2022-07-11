@@ -1,12 +1,17 @@
-uniform sampler2D inputTexture;
+precision highp sampler2DArray;
+
+uniform sampler2DArray inputTexture;
 uniform vec2 size;
 
-varying vec2 uv;
+in vec2 vUv;
 
 void main() {
-    if (texture2D(inputTexture, uv).r > 0.5) {
-        gl_FragColor = vec4(1, 0, 0, 1);
+    if (texture(inputTexture, vec3(vUv, 1)).r > 0.5) {
+        gl_FragColor.r = 1.0;
     } else {
-        gl_FragColor = vec4(0, 1, 0, 1);
+        gl_FragColor.r = 0.0;
     }
+
+    // debug
+    gl_FragColor.r = texture(inputTexture, vec3(vUv, 1)).r;
 }
