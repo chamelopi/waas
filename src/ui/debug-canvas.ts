@@ -1,4 +1,4 @@
-export function showDebugCanvas(data: Uint32Array, width: number, height: number) {
+export function showDebugCanvas(data: Uint8Array, width: number, height: number) {
     // Remove if existing
     document.getElementById("dbgCanvas")?.remove();
 
@@ -13,6 +13,11 @@ export function showDebugCanvas(data: Uint32Array, width: number, height: number
     document.body.appendChild(dbgCanvas);
     let ctx = dbgCanvas.getContext("2d");
     let img = ctx.getImageData(0, 0, width, height);
-    img.data.set(new Uint8Array(data.buffer));
+    for (let i = 0; i < width * height * 4; i += 4) {
+        img.data[i] = data[i / 4];
+        img.data[i + 1] = 0;
+        img.data[i + 2] = 0;
+        img.data[i + 3] = 255;
+    }
     ctx.putImageData(img, 0, 0);
 }

@@ -79,10 +79,9 @@ controls.onKeyUp("t", () => {
 let guiMan = new GUIManager(controls);
 guiMan.show("map-editor");
 
-// TODO: uint32 might not be ideal, maybe use uint8 and red channel only?
-let arr = new Uint32Array(1024);
-arr.fill(0xff0000ff, 0, 512);
-arr.fill(0xffff0000, 512, 1024);
+let arr = new Uint8Array(1024);
+arr.fill(0x00, 0, 512);
+arr.fill(0xaa, 512, 1024);
 let result = computeOnGpu(renderer, arr, new THREE.Vector2(32, 32), "compute-passthrough", assets);
 
 showDebugCanvas(result, 32, 32);

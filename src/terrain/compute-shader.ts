@@ -5,15 +5,17 @@ import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRe
 // - use dependency injection for renderer, assets
 // - reuse renderer for sequential computations
 // - allow passing of additional uniforms
-export function computeOnGpu(renderer: THREE.WebGLRenderer, data: Uint32Array, dims: THREE.Vector2, shaderName: string, assets: any): Uint32Array {
+export function computeOnGpu(renderer: THREE.WebGLRenderer, data: Uint8Array, dims: THREE.Vector2, shaderName: string, assets: any): Uint8Array {
     if (data.length != dims.x * dims.y) {
         throw new Error(`Dimensions ${dims.x}/${dims.y} do not match data array length ${data.length}!`);
     }
 
     let gpuCompute = new GPUComputationRenderer(dims.x, dims.y, renderer);
+    gpuCompute.setDataType(THREE.ByteType);
 
     const inTexture = gpuCompute.createTexture();
-    inTexture.image.data.set(new Uint8Array(data.buffer));
+    inTexture.format = THREE.RedFormat;
+    inTexture.image.data.set(data);
 
     const error = gpuCompute.init();
     if (error !== null) {
@@ -26,7 +28,7 @@ export function computeOnGpu(renderer: THREE.WebGLRenderer, data: Uint32Array, d
         wrapT: THREE.ClampToEdgeWrapping,
         minFilter: THREE.NearestFilter,
         magFilter: THREE.NearestFilter,
-        format: THREE.RGBAFormat,
+        format: THREE.RedFormat,
         type: THREE.UnsignedByteType,
         depthBuffer: false
     });
@@ -43,8 +45,8 @@ export function computeOnGpu(renderer: THREE.WebGLRenderer, data: Uint32Array, d
     // Do the actual computation
     gpuCompute.doRenderTarget(shaderMaterial, renderTarget);
 
-    const result = new Uint8Array(dims.x * dims.y * 4);
+    const result = new Uint8Array(dims.x * dims.y);
     renderer.readRenderTargetPixels(renderTarget, 0, 0, dims.x, dims.y, result);
 
-    return new Uint32Array(result.buffer);
+    return result;
 }
