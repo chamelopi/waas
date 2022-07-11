@@ -6,7 +6,8 @@ import { CameraControls } from "./camera-controls";
 import { Doodads } from "./doodads";
 import { Controls } from "./controls";
 import { GUIManager } from "./ui/gui-manager";
-import { computeShader } from "./terrain/compute-shader";
+import { computeOnGpu } from "./terrain/compute-shader";
+import { showDebugCanvas } from "./ui/debug-canvas";
 
 const scene = new THREE.Scene();
 
@@ -79,15 +80,12 @@ let guiMan = new GUIManager(controls);
 guiMan.show("map-editor");
 
 
+let arr = new Uint32Array(1024);
+arr.fill(0xff0000ff, 0, 512);
+arr.fill(0xffff0000, 512, 1024);
+let result = computeOnGpu(renderer, arr, new THREE.Vector2(32, 32), "compute-passthrough", assets);
 
-let arr = new Uint8Array(1024);
-arr.fill(100, 0, 512);
-arr.fill(200, 513, 1023);
-arr[0] = 0;
-arr[1] = 255;
-console.log(arr);
-let result = computeShader(renderer, arr, new THREE.Vector2(32, 32), "red", assets, scene);
-console.log(result);
+showDebugCanvas(result, 32, 32);
 
 // TODO: Refactor into main loop + update func for certain types of game objects
 let lastframe = performance.now();

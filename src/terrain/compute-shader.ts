@@ -1,47 +1,47 @@
 import * as THREE from "three";
+import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 
-export function computeShader(renderer: THREE.WebGLRenderer, data: Uint8Array, dims: THREE.Vector2, shaderName: string, assets: any, myscene: THREE.Scene): Uint8Array {
-    // Maybe try this:
-    //https://github.com/mrdoob/three.js/blob/master/examples/webgl_gpgpu_water.html
+export function computeOnGpu(renderer: THREE.WebGLRenderer, data: Uint32Array, dims: THREE.Vector2, shaderName: string, assets: any): Uint32Array {
+    if (data.length != dims.x * dims.y) {
+        throw new Error(`Dimensions ${dims.x}/${dims.y} do not match data array length ${data.length}!`);
+    }
 
+    let gpuCompute = new GPUComputationRenderer(dims.x, dims.y, renderer);
 
-    // TODO: framebufferTexture2D: Bad `imageTarget`
-    const renderTarget = new THREE.WebGLArrayRenderTarget(dims.x, dims.y, 1);
-    // Output format: only red channel
-    renderTarget.texture.format = THREE.RedFormat;
+    const inTexture = gpuCompute.createTexture();
+    inTexture.image.data.set(new Uint8Array(data.buffer));
 
-    const texture = new THREE.DataArrayTexture(data, dims.x, dims.y, 1);
-    texture.format = THREE.RedFormat;
-    texture.needsUpdate = true;
+    const error = gpuCompute.init();
+    if (error !== null) {
+        console.error(error);
+    }
 
-    const material = new THREE.ShaderMaterial({
-        uniforms: {
-            size: { value: new THREE.Vector2(dims.x, dims.y) },
-            inputTexture: { value: texture },
-        },
-        vertexShader: assets.shaders["shaders/compute-passthrough.glsl"],
-        fragmentShader: assets.shaders["shaders/compute-" + shaderName + ".glsl"],
+    // (use defaults)
+    const renderTarget = new THREE.WebGLRenderTarget(dims.x, dims.y, {
+        wrapS: THREE.ClampToEdgeWrapping,
+        wrapT: THREE.ClampToEdgeWrapping,
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter,
+        format: THREE.RGBAFormat,
+        type: THREE.UnsignedByteType,
+        depthBuffer: false
     });
 
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material as unknown as THREE.MeshBasicMaterial);
+    const uniforms = {
+        inputTexture: { value: inTexture },
+        size: { value: dims },
+        // TODO: Add other uniforms as necessary
+    }
 
-    const postProcessScene = new THREE.Scene();
-    postProcessScene.add(mesh);
-    const postProcessCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const shader = assets.shaders["shaders/" + shaderName + ".glsl"];
+    console.log(assets);
+    const shaderMaterial = gpuCompute.createShaderMaterial(shader, uniforms);
 
-    renderer.setRenderTarget(renderTarget);
-    renderer.render(postProcessScene, postProcessCamera);
-    renderer.setRenderTarget(null);
+    // Do the actual computation
+    gpuCompute.doRenderTarget(shaderMaterial, renderTarget);
 
-    // DEBUG:
-    // TODO: This does not work because it is a TEXTURE_2D_ARRAY
-    const debugMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ map: renderTarget.texture }));
-    debugMesh.position.set(24, 2, 24);
-    myscene.add(debugMesh);
+    const result = new Uint8Array(dims.x * dims.y * 4);
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, dims.x, dims.y, result);
 
-    // Downloads data from GPU
-    let resultBuffer = new Uint8Array(dims.x * dims.y);
-    renderer.readRenderTargetPixels(renderTarget, 0, 0, dims.x, dims.y, resultBuffer);
-
-    return resultBuffer;
+    return new Uint32Array(result.buffer);
 }

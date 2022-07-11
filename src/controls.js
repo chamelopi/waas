@@ -14,8 +14,8 @@ export class Controls {
         document.addEventListener("mouseup", e => this.mouseUpListener(e));
         // Prevent right click context menu
         document.addEventListener("contextmenu", e => {
-            e.preventDefault();
-            return false;
+            //e.preventDefault();
+            //return false;
         });
     }
 
