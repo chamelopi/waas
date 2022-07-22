@@ -14,7 +14,6 @@ npm run build
 
 ### Next TODOs
 
-- fix compute shader prototype
 - heightmap on GPU
 - add shaders for heightmap editing, keep in sync with heightmap in RAM
 

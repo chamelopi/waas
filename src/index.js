@@ -6,7 +6,7 @@ import { CameraControls } from "./camera-controls";
 import { Doodads } from "./doodads";
 import { Controls } from "./controls";
 import { GUIManager } from "./ui/gui-manager";
-import { computeOnGpu } from "./terrain/compute-shader";
+import { computeOnGpu, ComputeShaderRunner } from "./terrain/compute-shader";
 import { showDebugCanvas } from "./ui/debug-canvas";
 
 const scene = new THREE.Scene();
@@ -45,6 +45,8 @@ camera.position.z = center[1];
 const skybox = makeSkybox(assets.textures, "envmap_miramar", "miramar", "png");
 scene.add(skybox);
 
+const gpuCompute = new ComputeShaderRunner(renderer, new THREE.Vector2(32, 32), assets);
+
 // TODO: We could use sin and cos to simulate small waves in a custom vertex shader
 const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64),
     new THREE.MeshBasicMaterial({ map: assets.textures["water.png"], transparent: true, opacity: 0.65 }));
@@ -82,7 +84,8 @@ guiMan.show("map-editor");
 let arr = new Uint8Array(1024);
 arr.fill(0x00, 0, 512);
 arr.fill(0xaa, 512, 1024);
-let result = computeOnGpu(renderer, arr, new THREE.Vector2(32, 32), "compute-passthrough", assets);
+gpuCompute.uploadData(arr);
+let result = gpuCompute.computeArray("compute-passthrough", assets);
 
 showDebugCanvas(result, 32, 32);
 

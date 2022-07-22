@@ -1,52 +1,70 @@
 import * as THREE from "three";
 import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer';
 
-// TODO: Refactor into class
-// - use dependency injection for renderer, assets
-// - reuse renderer for sequential computations
-// - allow passing of additional uniforms
-export function computeOnGpu(renderer: THREE.WebGLRenderer, data: Uint8Array, dims: THREE.Vector2, shaderName: string, assets: any): Uint8Array {
-    if (data.length != dims.x * dims.y) {
-        throw new Error(`Dimensions ${dims.x}/${dims.y} do not match data array length ${data.length}!`);
+class ComputeShaderRunner {
+    private gpuCompute: GPUComputationRenderer;
+    private inTexture: THREE.DataTexture;
+    private renderTarget: THREE.WebGLRenderTarget;
+
+    constructor(private renderer: THREE.WebGLRenderer, private dims: THREE.Vector2, private assets: any) {
+        this.gpuCompute = new GPUComputationRenderer(dims.x, dims.y, renderer);
+        this.gpuCompute.setDataType(THREE.ByteType);
+    
+        this.inTexture = this.gpuCompute.createTexture();
+        this.inTexture.format = THREE.RedFormat;
+        
+        const error = this.gpuCompute.init();
+        if (error !== null) {
+            console.error(error);
+        }
+
+        this.renderTarget = new THREE.WebGLRenderTarget(this.dims.x, this.dims.y, {
+            wrapS: THREE.ClampToEdgeWrapping,
+            wrapT: THREE.ClampToEdgeWrapping,
+            minFilter: THREE.NearestFilter,
+            magFilter: THREE.NearestFilter,
+            format: THREE.RedFormat,
+            type: THREE.UnsignedByteType,
+            depthBuffer: false
+        });
     }
 
-    let gpuCompute = new GPUComputationRenderer(dims.x, dims.y, renderer);
-    gpuCompute.setDataType(THREE.ByteType);
-
-    const inTexture = gpuCompute.createTexture();
-    inTexture.format = THREE.RedFormat;
-    inTexture.image.data.set(data);
-
-    const error = gpuCompute.init();
-    if (error !== null) {
-        console.error(error);
+    public uploadData(data: Uint8Array) {
+        if (data.length != this.dims.x * this.dims.y) {
+            throw new Error(`Dimensions ${this.dims.x}/${this.dims.y} do not match data array length ${data.length}!`);
+        }
+        this.inTexture.image.data.set(data);
     }
 
-    // (use defaults)
-    const renderTarget = new THREE.WebGLRenderTarget(dims.x, dims.y, {
-        wrapS: THREE.ClampToEdgeWrapping,
-        wrapT: THREE.ClampToEdgeWrapping,
-        minFilter: THREE.NearestFilter,
-        magFilter: THREE.NearestFilter,
-        format: THREE.RedFormat,
-        type: THREE.UnsignedByteType,
-        depthBuffer: false
-    });
-
-    const uniforms = {
-        inputTexture: { value: inTexture },
-        size: { value: dims },
+    private compute(shaderName: string, uniforms: Record<any, any>) {
+        const mergedUniforms = {
+            ...uniforms,
+            inputTexture: { value: this.inTexture },
+            size: { value: this.dims },
+        }
+    
+        const shader = this.assets.shaders["shaders/" + shaderName + ".glsl"];
+        const shaderMaterial = this.gpuCompute.createShaderMaterial(shader, mergedUniforms);
+    
+        // Do the actual computation
+        this.gpuCompute.doRenderTarget(shaderMaterial, this.renderTarget);
     }
 
-    const shader = assets.shaders["shaders/" + shaderName + ".glsl"];
-    console.log(assets);
-    const shaderMaterial = gpuCompute.createShaderMaterial(shader, uniforms);
+    public computeTexture(shaderName: string, uniforms: Record<any, any>): THREE.Texture {
+        this.compute(shaderName, uniforms);
+        return this.renderTarget.texture;
+    }
 
-    // Do the actual computation
-    gpuCompute.doRenderTarget(shaderMaterial, renderTarget);
+    public computeArray(shaderName: string, uniforms: Record<any, any>): Uint8Array {
+        this.compute(shaderName, uniforms);
+    
+        const result = new Uint8Array(this.dims.x * this.dims.y);
+        this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.dims.x, this.dims.y, result);
+    
+        return result;
+    }
+}
 
-    const result = new Uint8Array(dims.x * dims.y);
-    renderer.readRenderTargetPixels(renderTarget, 0, 0, dims.x, dims.y, result);
-
-    return result;
+export {
+    ComputeShaderRunner,
 }
