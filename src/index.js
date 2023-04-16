@@ -8,6 +8,7 @@ import { Controls } from "./controls";
 import { GUIManager } from "./ui/gui-manager";
 import { computeOnGpu, ComputeShaderRunner } from "./terrain/compute-shader";
 import { showDebugCanvas } from "./ui/debug-canvas";
+import { MeshBasicMaterial, ShaderMaterial } from "three";
 
 const scene = new THREE.Scene();
 
@@ -81,13 +82,20 @@ controls.onKeyUp("t", () => {
 let guiMan = new GUIManager(controls);
 guiMan.show("map-editor");
 
-let arr = new Uint8Array(1024);
-arr.fill(0x00, 0, 512);
-arr.fill(0xaa, 512, 1024);
-gpuCompute.uploadData(arr);
-let result = gpuCompute.computeArray("compute-passthrough", assets);
+camControl.camera.position.set(8, 1, 8);
 
-showDebugCanvas(result, 32, 32);
+let initialData = new Uint8Array(gpuCompute.dims.x * gpuCompute.dims.y);
+initialData.fill(0);
+let cubeShader = new ShaderMaterial({
+    uniforms: {
+        myTexture: { value: gpuCompute.getOutTexture() },
+    },
+    vertexShader: assets.shaders["shaders/passthrough.glsl"],
+    fragmentShader: assets.shaders["shaders/test-showtexture.glsl"],
+});
+let obj = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), cubeShader);
+scene.add(obj);
+
 
 // TODO: Refactor into main loop + update func for certain types of game objects
 let lastframe = performance.now();
@@ -102,6 +110,17 @@ function animate() {
     camControl.update(dt, heightmap);
     // Needs dt in seconds
     assets.mixers.forEach(mixer => mixer.update(dt / 1000));
+
+    gpuCompute.computeTexture("compute-update", {
+        time: { value: dt }
+    });
+    gpuCompute.swapTextures();
+    // TODO: It says this is illegal feedback.
+    // - We can try to add a copy pass which copies the output back to the input
+    // - Or we can copy the data back to the CPU and then over again :/
+
+    // inTexture contains output from previous frame now
+    cubeShader.uniforms.myTexture = gpuCompute.getInTexture();
 
     guiMan.update(dt);
 

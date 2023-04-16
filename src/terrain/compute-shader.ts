@@ -6,7 +6,7 @@ class ComputeShaderRunner {
     private inTexture: THREE.DataTexture;
     private renderTarget: THREE.WebGLRenderTarget;
 
-    constructor(private renderer: THREE.WebGLRenderer, private dims: THREE.Vector2, private assets: any) {
+    constructor(private renderer: THREE.WebGLRenderer, public dims: THREE.Vector2, private assets: any) {
         this.gpuCompute = new GPUComputationRenderer(dims.x, dims.y, renderer);
         this.gpuCompute.setDataType(THREE.ByteType);
     
@@ -25,8 +25,22 @@ class ComputeShaderRunner {
             magFilter: THREE.NearestFilter,
             format: THREE.RedFormat,
             type: THREE.UnsignedByteType,
-            depthBuffer: false
+            depthBuffer: false,
         });
+    }
+
+    public getOutTexture(): THREE.Texture {
+        return this.renderTarget.texture;
+    }
+
+    public getInTexture(): THREE.Texture {
+        return this.inTexture;
+    }
+
+    public swapTextures() {
+        const temp = this.inTexture;
+        this.inTexture = this.renderTarget.texture as THREE.DataTexture;
+        this.renderTarget.texture = temp;
     }
 
     public uploadData(data: Uint8Array) {

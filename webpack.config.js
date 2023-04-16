@@ -1,5 +1,4 @@
 const path = require("path");
-const ShellPlugin = require("webpack-shell-plugin-next");
 
 module.exports = {
     entry: "./src/index.js",
@@ -29,16 +28,6 @@ module.exports = {
     experiments: {
         topLevelAwait: true,
     },
-    // Rebuild asset list automatically
-    plugins: [
-        new ShellPlugin({
-            onBuildStart: {
-                scripts: ['node build-asset-list.js'],
-                blocking: true,
-                parallel: false,
-            }
-        })
-    ],
 
     // DEV mode
     devtool: "eval-source-map",
