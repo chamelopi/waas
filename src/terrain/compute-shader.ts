@@ -38,6 +38,9 @@ class ComputeShaderRunner {
     }
 
     // TODO: We seem to require three textures, not just two!
+    // - Or 2-3 render targets?
+    // - Maybe try like here: https://github.com/cabbibo/PhysicsRenderer
+    // TODO: Also, maybe move swap into actual compute call
     public swapTextures() {
         const temp = this.inTexture;
         this.inTexture = this.renderTarget.texture as THREE.DataTexture;
