@@ -37,6 +37,7 @@ class ComputeShaderRunner {
         return this.inTexture;
     }
 
+    // TODO: We seem to require three textures, not just two!
     public swapTextures() {
         const temp = this.inTexture;
         this.inTexture = this.renderTarget.texture as THREE.DataTexture;

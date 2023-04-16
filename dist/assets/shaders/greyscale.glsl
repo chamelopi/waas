@@ -1,6 +1,6 @@
-varying float height;
+varying float vHeight;
 
 void main() {
-    float h = height - 0.5;
+    float h = vHeight - 0.5;
     gl_FragColor = vec4(h, h, h, 1.0);
 }

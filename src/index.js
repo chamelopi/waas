@@ -84,6 +84,7 @@ guiMan.show("map-editor");
 
 camControl.camera.position.set(8, 1, 8);
 
+
 let initialData = new Uint8Array(gpuCompute.dims.x * gpuCompute.dims.y);
 initialData.fill(0);
 let cubeShader = new ShaderMaterial({
@@ -111,16 +112,20 @@ function animate() {
     // Needs dt in seconds
     assets.mixers.forEach(mixer => mixer.update(dt / 1000));
 
+    console.log("computing update");
     gpuCompute.computeTexture("compute-update", {
         time: { value: dt }
     });
+    console.log("computed");
     gpuCompute.swapTextures();
     // TODO: It says this is illegal feedback.
     // - We can try to add a copy pass which copies the output back to the input
     // - Or we can copy the data back to the CPU and then over again :/
 
+    console.log("textures swapped");
     // inTexture contains output from previous frame now
     cubeShader.uniforms.myTexture = gpuCompute.getInTexture();
+    debugger;
 
     guiMan.update(dt);
 

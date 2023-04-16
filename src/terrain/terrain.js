@@ -38,6 +38,7 @@ function getHeightFromPosition(heightmapData, x, y) {
 
 function createTerrainMesh(heightmapData) {
     let geometry = new THREE.BufferGeometry();
+
     // Create vertices from height map
     const vertices = new Float32Array(heightmapData.width * heightmapData.height * 3);
     const uvs = new Float32Array(heightmapData.width * heightmapData.height * 2);

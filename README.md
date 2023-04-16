@@ -3,8 +3,12 @@
 ## Local dev environment
 
 ```
+# If assets have changed
+node build-asset-list.js
 npm run dev
 ```
+
+Note: If Firefox has "resistFingerprinting" enabled, our rendering is broken :(
 
 ## Building for production
 
