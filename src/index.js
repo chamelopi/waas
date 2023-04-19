@@ -6,9 +6,8 @@ import { CameraControls } from "./camera-controls";
 import { Doodads } from "./doodads";
 import { Controls } from "./controls";
 import { GUIManager } from "./ui/gui-manager";
-import { computeOnGpu, ComputeShaderRunner } from "./terrain/compute-shader";
-import { showDebugCanvas } from "./ui/debug-canvas";
-import { MeshBasicMaterial, ShaderMaterial } from "three";
+import { ComputeShaderRunner } from "./terrain/compute-shader";
+import { ShaderMaterial } from "three";
 
 const scene = new THREE.Scene();
 
@@ -79,14 +78,25 @@ controls.onKeyUp("t", () => {
     createRandomTree(heightmap);
 });
 
+let initialData = new Uint8Array(gpuCompute.dims.x * gpuCompute.dims.y);
+initialData.fill(1);
+gpuCompute.uploadData(initialData);
+
 let guiMan = new GUIManager(controls);
 guiMan.show("map-editor");
+guiMan.getCurrentView().addEvent("click", "shader-run", () => {
+    gpuCompute.computeTexture("compute-update", {
+        time: { value: 0.24 }
+    });
+    gpuCompute.swapTextures();
+
+    // inTexture contains output from previous frame now
+    cubeShader.uniforms.myTexture = gpuCompute.getInTexture();
+    cubeShader.needsUpdate = true;
+});
 
 camControl.camera.position.set(8, 1, 8);
 
-
-let initialData = new Uint8Array(gpuCompute.dims.x * gpuCompute.dims.y);
-initialData.fill(0);
 let cubeShader = new ShaderMaterial({
     uniforms: {
         myTexture: { value: gpuCompute.getOutTexture() },
@@ -111,21 +121,6 @@ function animate() {
     camControl.update(dt, heightmap);
     // Needs dt in seconds
     assets.mixers.forEach(mixer => mixer.update(dt / 1000));
-
-    console.log("computing update");
-    gpuCompute.computeTexture("compute-update", {
-        time: { value: dt }
-    });
-    console.log("computed");
-    gpuCompute.swapTextures();
-    // TODO: It says this is illegal feedback.
-    // - We can try to add a copy pass which copies the output back to the input
-    // - Or we can copy the data back to the CPU and then over again :/
-
-    console.log("textures swapped");
-    // inTexture contains output from previous frame now
-    cubeShader.uniforms.myTexture = gpuCompute.getInTexture();
-    debugger;
 
     guiMan.update(dt);
 

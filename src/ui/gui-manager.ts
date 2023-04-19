@@ -21,6 +21,10 @@ export class GUIManager {
         this.views[this.currentView].onShow();
     }
 
+    getCurrentView(): ViewName | null {
+        return this.views[this.currentView];
+    }
+
     update() {
         if (this.currentView) {
             this.views[this.currentView].onUpdate();

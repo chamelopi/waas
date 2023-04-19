@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "node build-asset-list.js; webpack --config webpack.config.js",
-    "dev": "webpack serve --config webpack.config.js"
+    "build": "node ./build-asset-list.js && webpack --config webpack.config.js",
+    "dev": "node ./build-asset-list.js && webpack serve --config webpack.config.js"
   },
   "author": "",
   "license": "ISC",

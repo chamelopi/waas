@@ -6,5 +6,5 @@ void main() {
     vec2 uv = gl_FragCoord.xy / size;
 
     float red = texture2D(inputTexture, uv).r - time;
-    gl_FragColor.r = min(0.0, red);
+    gl_FragColor.r = max(0.0, red);
 }

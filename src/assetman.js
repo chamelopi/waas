@@ -36,7 +36,6 @@ async function loadTextFiles(paths) {
  * Current supported types are `textures` and `models`
  */
 async function loadAssets() {
-    // TODO: we removed the list generation from webpack.config
     // Retrieve list of assets (created dynamically during build process)
     let response = await (await fetch("/assets/asset-list.json")).json();
     

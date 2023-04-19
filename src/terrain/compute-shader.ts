@@ -5,6 +5,8 @@ class ComputeShaderRunner {
     private gpuCompute: GPUComputationRenderer;
     private inTexture: THREE.DataTexture;
     private renderTarget: THREE.WebGLRenderTarget;
+    private shader?: string;
+    private shaderMaterial?: THREE.ShaderMaterial;
 
     constructor(private renderer: THREE.WebGLRenderer, public dims: THREE.Vector2, private assets: any) {
         this.gpuCompute = new GPUComputationRenderer(dims.x, dims.y, renderer);
@@ -37,10 +39,8 @@ class ComputeShaderRunner {
         return this.inTexture;
     }
 
-    // TODO: We seem to require three textures, not just two!
-    // - Or 2-3 render targets?
+    // TODO: We seem to require multiple render targets and swap them in between passes
     // - Maybe try like here: https://github.com/cabbibo/PhysicsRenderer
-    // TODO: Also, maybe move swap into actual compute call
     public swapTextures() {
         const temp = this.inTexture;
         this.inTexture = this.renderTarget.texture as THREE.DataTexture;
@@ -52,6 +52,12 @@ class ComputeShaderRunner {
             throw new Error(`Dimensions ${this.dims.x}/${this.dims.y} do not match data array length ${data.length}!`);
         }
         this.inTexture.image.data.set(data);
+        this.inTexture.needsUpdate = true;
+    }
+
+    public downloadData(): Uint8Array {
+        // TODO: Implement
+        throw new Error("Not implemented!");
     }
 
     private compute(shaderName: string, uniforms: Record<any, any>) {
@@ -60,12 +66,21 @@ class ComputeShaderRunner {
             inputTexture: { value: this.inTexture },
             size: { value: this.dims },
         }
-    
-        const shader = this.assets.shaders["shaders/" + shaderName + ".glsl"];
-        const shaderMaterial = this.gpuCompute.createShaderMaterial(shader, mergedUniforms);
+
+        // Use cached shader unless we want a different one
+        if (!this.shader || !this.shaderMaterial || this.shader != shaderName) {
+            console.log("compiling shader " + shaderName);
+            const shaderCode = this.assets.shaders["shaders/" + shaderName + ".glsl"];
+            this.shader = shaderName;
+            this.shaderMaterial = this.gpuCompute.createShaderMaterial(shaderCode, mergedUniforms);
+        } else {
+            console.log("using shader " + shaderName + " from cache");
+            this.shaderMaterial.uniforms = mergedUniforms;
+            this.shaderMaterial.needsUpdate = true;
+        }
     
         // Do the actual computation
-        this.gpuCompute.doRenderTarget(shaderMaterial, this.renderTarget);
+        this.gpuCompute.doRenderTarget(this.shaderMaterial, this.renderTarget);
     }
 
     public computeTexture(shaderName: string, uniforms: Record<any, any>): THREE.Texture {

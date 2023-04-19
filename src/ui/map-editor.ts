@@ -13,6 +13,8 @@ export class MapEditor extends GUIBase {
             <button id="editor-select-mode">Select</button>
             <button id="editor-height-mode">Edit terrain height</button>
             <button id="editor-texture-mode">Edit terrain texture</button>
+            <!-- debug -->
+            <button id="shader-run">Run compute shader</button>
             <span id="editor-current-mode">select mode</span>
         </div>
         `
@@ -36,7 +38,7 @@ export class MapEditor extends GUIBase {
         this.addEvent("click", "editor-select-mode", () => {
             this.setText("editor-current-mode", "select mode");
             this.mode = MapEditorMode.SelectMode;
-        })
+        });
     }
 
     onHide(): void {

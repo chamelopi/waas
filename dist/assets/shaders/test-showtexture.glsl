@@ -4,6 +4,6 @@ varying float vHeight;
 varying vec2 vUv;
 
 void main() {
-    float red = texture2D(myTexture, vUv).r;
-    gl_FragColor = vec4(0, 0, red, 1);
+    vec4 color = texture2D(myTexture, vUv);
+    gl_FragColor = vec4(color.rgb, 1);
 }
