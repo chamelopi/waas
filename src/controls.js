@@ -83,5 +83,15 @@ export class Controls {
     getMouseState(button) {
         return !!(this.mouseState[button]);
     }
-}
 
+    /**
+     * Resets all keystates at the end of the frame
+     */
+    reset() {
+        for (const [k, v] of Object.entries(this.keystate)) {
+            if (v) {
+                this.keystate[k] = false;
+            }
+        }
+    }
+}

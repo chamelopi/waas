@@ -40,3 +40,10 @@
     left: 1em;
     top: 1em;
 }
+
+.ui-label {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 1.2em;
+    color: #1c1c1c;
+    text-shadow: 1px 1px white;
+}

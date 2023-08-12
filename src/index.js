@@ -78,6 +78,7 @@ controls.onKeyUp("t", () => {
     createRandomTree(heightmap);
 });
 
+
 let initialData = new Uint8Array(gpuCompute.dims.x * gpuCompute.dims.y);
 initialData.fill(1);
 gpuCompute.uploadData(initialData);
@@ -99,7 +100,7 @@ camControl.camera.position.set(8, 1, 8);
 
 let cubeShader = new ShaderMaterial({
     uniforms: {
-        myTexture: { value: gpuCompute.getOutTexture() },
+        myTexture: { value: gpuCompute.getInTexture() },
     },
     vertexShader: assets.shaders["shaders/passthrough.glsl"],
     fragmentShader: assets.shaders["shaders/test-showtexture.glsl"],

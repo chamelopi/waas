@@ -3,17 +3,15 @@ import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRe
 
 class ComputeShaderRunner {
     private gpuCompute: GPUComputationRenderer;
-    private inTexture: THREE.DataTexture;
     private renderTarget: THREE.WebGLRenderTarget;
+    private otherRenderTarget: THREE.WebGLRenderTarget;
     private shader?: string;
     private shaderMaterial?: THREE.ShaderMaterial;
+    private inTexture: THREE.Texture;
 
     constructor(private renderer: THREE.WebGLRenderer, public dims: THREE.Vector2, private assets: any) {
         this.gpuCompute = new GPUComputationRenderer(dims.x, dims.y, renderer);
         this.gpuCompute.setDataType(THREE.ByteType);
-    
-        this.inTexture = this.gpuCompute.createTexture();
-        this.inTexture.format = THREE.RedFormat;
         
         const error = this.gpuCompute.init();
         if (error !== null) {
@@ -29,30 +27,29 @@ class ComputeShaderRunner {
             type: THREE.UnsignedByteType,
             depthBuffer: false,
         });
-    }
+        this.otherRenderTarget = this.renderTarget.clone();
 
-    public getOutTexture(): THREE.Texture {
-        return this.renderTarget.texture;
-    }
-
-    public getInTexture(): THREE.Texture {
-        return this.inTexture;
+        this.inTexture = new THREE.Texture();
     }
 
     // TODO: We seem to require multiple render targets and swap them in between passes
     // - Maybe try like here: https://github.com/cabbibo/PhysicsRenderer
     public swapTextures() {
-        const temp = this.inTexture;
-        this.inTexture = this.renderTarget.texture as THREE.DataTexture;
-        this.renderTarget.texture = temp;
+        const temp = this.renderTarget;
+        this.renderTarget = this.otherRenderTarget;
+        this.otherRenderTarget = temp;
     }
 
     public uploadData(data: Uint8Array) {
         if (data.length != this.dims.x * this.dims.y) {
             throw new Error(`Dimensions ${this.dims.x}/${this.dims.y} do not match data array length ${data.length}!`);
         }
-        this.inTexture.image.data.set(data);
+        this.inTexture = new THREE.DataTexture(data, this.dims.x, this.dims.y);
         this.inTexture.needsUpdate = true;
+    }
+
+    public getInTexture(): THREE.Texture {
+        return this.inTexture;
     }
 
     public downloadData(): Uint8Array {

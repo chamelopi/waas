@@ -6,8 +6,8 @@ export class MapEditor extends GUIBase {
     private html: string;
     private mode: MapEditorMode;
 
-    constructor(private controls: Controls) {
-        super();
+    constructor(controls: Controls) {
+        super(controls);
         this.html = `
         <div class="ui-base ui-top-right">
             <button id="editor-select-mode">Select</button>
@@ -15,7 +15,7 @@ export class MapEditor extends GUIBase {
             <button id="editor-texture-mode">Edit terrain texture</button>
             <!-- debug -->
             <button id="shader-run">Run compute shader</button>
-            <span id="editor-current-mode">select mode</span>
+            <span class="ui-label" id="editor-current-mode">select mode</span>
         </div>
         `
         this.mode = MapEditorMode.SelectMode;
