@@ -75,7 +75,7 @@ controls.onKeyUp("t", () => {
 });
 
 
-let guiMan = new GUIManager(controls);
+let guiMan = new GUIManager(controls, terrain, camera);
 guiMan.show("map-editor");
 
 

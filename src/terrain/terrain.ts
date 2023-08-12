@@ -16,7 +16,6 @@ class Terrain {
     public mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
 
     constructor(imageData: ImageData, assets: AssetManager) {
-        console.log('loading terrain');
         this.data = new Uint8Array(imageData.width * imageData.height);
         
         let buffer = []
@@ -29,7 +28,15 @@ class Terrain {
         this.width = imageData.width;
         this.height = imageData.height;
         this.mesh = createTerrainMesh(this.data, this.width, this.height, assets);
-        console.log('loaded terrain');
+    }
+
+    /**
+     * Updates map-editor related uniforms
+     */
+    updateUniforms(showBrush: boolean, brushRadius: number, mousePos: THREE.Vector2) {
+        this.mesh.material.uniforms.showBrush = { value: showBrush };
+        this.mesh.material.uniforms.brushRadius = { value: brushRadius, };
+        this.mesh.material.uniforms.mousePos = { value: mousePos };
     }
 
     getHeightValue(x: number, y: number): number {
@@ -124,9 +131,15 @@ function createTerrainMesh(heightmapData: Uint8Array, width: number, height: num
             sand: { value: assets.textures["sand.jpg"]},
             rock: { value: assets.textures["rock.jpg"]},
             grass: { value: assets.textures["grass.png"]},
-            heightScale: { value: HEIGHTMAP_HEIGHT_SCALE }
+            heightScale: { value: HEIGHTMAP_HEIGHT_SCALE },
+
+            // Parameters for map editor
+            showBrush: { value: true },
+            brushRadius: { value: 15, },
+            mousePos: { value: new THREE.Vector2(0, 0), },
+            meshDimensions: { value: new THREE.Vector2(width, height), },
         },
-        vertexShader: assets.shaders["shaders/passthrough.glsl"],
+        vertexShader: assets.shaders["shaders/terrain-vertex.glsl"],
         fragmentShader: assets.shaders["shaders/splat.glsl"],
     }));
     mesh.receiveShadow = true;

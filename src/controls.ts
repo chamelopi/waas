@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 /**
  * Handles keyboard input, ignoring key presses automatically when HTML input fields are selected
  * 
@@ -6,13 +8,18 @@ export class Controls {
 
     private keystate: any;
     private mouseState: any;
+    private mouseX: number;
+    private mouseY: number;
 
     constructor(canvas: HTMLCanvasElement) {
         this.keystate = {};
         this.mouseState = {};
+        this.mouseX = 0;
+        this.mouseY = 0;
 
         document.addEventListener("keyup", e => this.keyUpListener(e));
         document.addEventListener("keydown", e => this.keyDownListener(e));
+        document.addEventListener("pointermove", e => this.pointerMove(e));
         canvas.addEventListener("mousedown", e => this.mouseDownListener(e));
         canvas.addEventListener("mouseup", e => this.mouseUpListener(e));
         // Prevent right click context menu
@@ -28,6 +35,14 @@ export class Controls {
 
     isCanvasElement(): boolean {
         return document.activeElement.tagName === "canvas";
+    }
+
+    pointerMove(ev) {
+        if (ev.defaultPrevented) return;
+
+        // normalized device coordinates
+        this.mouseX = (ev.clientX / window.innerWidth ) * 2 - 1;
+        this.mouseY = -(ev.clientY / window.innerHeight ) * 2 + 1;
     }
 
     keyDownListener(ev) {
@@ -78,6 +93,10 @@ export class Controls {
         } else {
             return this.keystate;
         }
+    }
+
+    getMousePos(): THREE.Vector2 {
+        return new THREE.Vector2(this.mouseX, this.mouseY);
     }
 
     /**
