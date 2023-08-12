@@ -28,6 +28,7 @@ npm run build
 
 ### Next TODOs
 
+- Water shader
 - Make doodads react on height changes (adjust to correct height)
 - Texture painting (needs a different terrain shader)
 - Placing doodads
