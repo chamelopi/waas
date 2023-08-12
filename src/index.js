@@ -6,8 +6,6 @@ import { CameraControls } from "./camera-controls";
 import { Doodads } from "./doodads";
 import { Controls } from "./controls";
 import { GUIManager } from "./ui/gui-manager";
-import { ComputeShaderRunner } from "./terrain/compute-shader";
-import { ShaderMaterial } from "three";
 
 const scene = new THREE.Scene();
 
@@ -27,16 +25,16 @@ const camControl = new CameraControls(camera, controls);
 
 // Load assets
 const assets = await loadAssets();
-const [terrain, heightmap] = await loadTerrain("heightmap.png", assets);
+const terrain = await loadTerrain("heightmap.png", assets);
 
 // Finished loading
 // TODO: Maybe display a spinning cube or sth
 document.querySelector("#loading").classList.add("invisible");
 
 // Add terrain
-scene.add(terrain);
+scene.add(terrain.mesh);
 // Move camera to center of terrain
-const center = getCenterOfTerrain(heightmap);
+const center = getCenterOfTerrain(terrain);
 // Y is set later based on terrain height
 camera.position.x = center[0];
 camera.position.z = center[1];
@@ -61,50 +59,24 @@ const trees = new Doodads(assets.getMesh("tree.glb"), assets.textures["Imphenzia
 function createTree(pos) {
     trees.add(pos, Math.random() * 2 * Math.PI, 0.05);
 }
-function createRandomTree(heightmap) {
+function createRandomTree(terrain) {
     let pos;
     do {
-        pos = randomPositionOnTerrain(heightmap);
+        pos = randomPositionOnTerrain(terrain);
     } while (pos.y < 0.6);
     createTree(pos);
 }
 for (let i = 0; i < 100; ++i) {
-    createRandomTree(heightmap);
+    createRandomTree(terrain);
 }
 // Add a random tree when t is pressed
 controls.onKeyUp("t", () => {
-    createRandomTree(heightmap);
+    createRandomTree(terrain);
 });
 
-
-camControl.camera.position.set(8, 1, 8);
-
-
-const gpuCompute = new ComputeShaderRunner(renderer, new THREE.Vector2(32, 32), assets);
-
-let initialData = new Float32Array(gpuCompute.dims.x * gpuCompute.dims.y * 4);
-initialData.fill(1.0);
-gpuCompute.initialize(initialData, "compute-update");
 
 let guiMan = new GUIManager(controls);
 guiMan.show("map-editor");
-guiMan.getCurrentView().addEvent("click", "shader-run", () => {
-    const outputTexture = gpuCompute.computeFrame(0.24);
-
-    cubeShader.uniforms.myTexture = outputTexture;
-    cubeShader.needsUpdate = true;
-    console.log("updated!", gpuCompute.downloadData());
-});
-
-let cubeShader = new ShaderMaterial({
-    uniforms: {
-        myTexture: { value: null },
-    },
-    vertexShader: assets.shaders["shaders/passthrough.glsl"],
-    fragmentShader: assets.shaders["shaders/test-showtexture.glsl"],
-});
-let obj = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), cubeShader);
-scene.add(obj);
 
 
 // TODO: Refactor into main loop + update func for certain types of game objects
@@ -117,11 +89,11 @@ function animate() {
     lastframe = curframe;
 
     // Update camera
-    camControl.update(dt, heightmap);
+    camControl.update(dt, terrain);
     // Needs dt in seconds
     assets.mixers.forEach(mixer => mixer.update(dt / 1000));
 
-    guiMan.update(dt);
+    guiMan.update();
 
     requestAnimationFrame(animate);
     renderer.render(scene, camera);

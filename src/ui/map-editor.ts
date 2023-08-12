@@ -13,8 +13,6 @@ export class MapEditor extends GUIBase {
             <button id="editor-select-mode">Select</button>
             <button id="editor-height-mode">Edit terrain height</button>
             <button id="editor-texture-mode">Edit terrain texture</button>
-            <!-- debug -->
-            <button id="shader-run">Run compute shader</button>
             <span class="ui-label" id="editor-current-mode">select mode</span>
         </div>
         `
