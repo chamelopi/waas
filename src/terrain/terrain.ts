@@ -32,7 +32,34 @@ class Terrain {
         console.log('loaded terrain');
     }
 
+    getHeightValue(x: number, y: number): number {
+        const dataIdx = (y * this.width + x);
+        // Transform the [0, 255] interval into a float & scale it with the correct factor
+        return this.data.at(dataIdx) / 255 * HEIGHTMAP_HEIGHT_SCALE;
+    }
 
+    getHeightFromPosition(x: number, y: number) {
+        x = Math.floor(x / HEIGHTMAP_TILE_SCALE);
+        y = Math.floor(y / HEIGHTMAP_TILE_SCALE);
+        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+            return this.getHeightValue(x, y);
+        } else {
+            return 0;
+        }
+    }
+
+    getCenterOfTerrain() {
+        return [
+            this.width * HEIGHTMAP_TILE_SCALE * 0.5,
+            this.height * HEIGHTMAP_TILE_SCALE * 0.5
+        ];
+    }
+
+    randomPositionOnTerrain() {
+        const x = this.width * Math.random();
+        const y = this.height * Math.random();
+        return new THREE.Vector3(x * HEIGHTMAP_TILE_SCALE, this.getHeightValue(Math.floor(x), Math.floor(y)), y * HEIGHTMAP_TILE_SCALE);
+    }
 }
 
 function getImageData(img: HTMLImageElement): ImageData {
@@ -45,28 +72,6 @@ function getImageData(img: HTMLImageElement): ImageData {
     return ctx.getImageData(0, 0, img.width, img.height);
 }
 
-function getCenterOfTerrain(terrain: Terrain) {
-    return [
-        terrain.width * HEIGHTMAP_TILE_SCALE * 0.5,
-        terrain.height * HEIGHTMAP_TILE_SCALE * 0.5
-    ];
-}
-
-function getHeightValue(heightmapData: Uint8Array, width: number, x: number, y: number): number {
-    const dataIdx = (y * width + x);
-    // Transform the [0, 255] interval into a float & scale it with the correct factor
-    return heightmapData.at(dataIdx) / 255 * HEIGHTMAP_HEIGHT_SCALE;
-}
-
-function getHeightFromPosition(heightmapData: Uint8Array, width: number, height: number, x: number, y: number) {
-    x = Math.floor(x / HEIGHTMAP_TILE_SCALE);
-    y = Math.floor(y / HEIGHTMAP_TILE_SCALE);
-    if (x >= 0 && x < width && y >= 0 && y < height) {
-        return getHeightValue(heightmapData, width, x, y);
-    } else {
-        return 0;
-    }
-}
 
 function createTerrainMesh(heightmapData: Uint8Array, width: number, height: number, assets: AssetManager) {
     let geometry = new THREE.BufferGeometry();
@@ -77,8 +82,7 @@ function createTerrainMesh(heightmapData: Uint8Array, width: number, height: num
     for (let i = 0; i < height; ++i) {
         for (let j = 0; j < width; ++j) {
             const dataIdx = (i * width + j);
-
-            const heightValue = getHeightValue(heightmapData, width, j, i);
+            const heightValue = heightmapData.at(dataIdx) / 255 * HEIGHTMAP_HEIGHT_SCALE;
 
             const idx = dataIdx * 3;
             // Vertices should be between 0 and 1
@@ -130,12 +134,6 @@ function createTerrainMesh(heightmapData: Uint8Array, width: number, height: num
     return mesh;
 }
 
-function randomPositionOnTerrain(terrain: Terrain) {
-    const x = terrain.width * Math.random();
-    const y = terrain.height * Math.random();
-    return new THREE.Vector3(x * HEIGHTMAP_TILE_SCALE, getHeightValue(terrain.data, terrain.width, Math.floor(x), Math.floor(y)), y * HEIGHTMAP_TILE_SCALE);
-}
-
 async function loadTerrain(heightmapFilename: string, assets: AssetManager) {
     const img = await new THREE.ImageLoader().loadAsync("assets/" + heightmapFilename);
     const imageData = getImageData(img);
@@ -146,9 +144,6 @@ async function loadTerrain(heightmapFilename: string, assets: AssetManager) {
 export {
     Terrain,
     loadTerrain,
-    getHeightFromPosition,
-    randomPositionOnTerrain,
-    getCenterOfTerrain,
     HEIGHTMAP_TILE_SCALE,
     HEIGHTMAP_HEIGHT_SCALE,
 }

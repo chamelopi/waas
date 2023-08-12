@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { getHeightFromPosition } from "./terrain/terrain";
 
 const CAMERA_LEFT = "a";
 const CAMERA_RIGHT = "d";
@@ -91,7 +90,7 @@ export class CameraControls {
         this.camera.position.z += dir.y * CAMERA_SPEED * dt;
 
         // Set height based on terrain, so that we can look on the top of high mountains etc.
-        let height = getHeightFromPosition(terrain.data, terrain.width, terrain.height, this.camera.position.x, this.camera.position.z);
+        let height = terrain.getHeightFromPosition(this.camera.position.x, this.camera.position.z);
         this.camera.position.y = height > 0 ? height + CAMERA_Y_OFFSET : CAMERA_Y_OFFSET;
     }
 }

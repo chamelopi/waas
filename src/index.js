@@ -34,7 +34,7 @@ document.querySelector("#loading").classList.add("invisible");
 // Add terrain
 scene.add(terrain.mesh);
 // Move camera to center of terrain
-const center = getCenterOfTerrain(terrain);
+const center = terrain.getCenterOfTerrain();
 // Y is set later based on terrain height
 camera.position.x = center[0];
 camera.position.z = center[1];
@@ -62,7 +62,7 @@ function createTree(pos) {
 function createRandomTree(terrain) {
     let pos;
     do {
-        pos = randomPositionOnTerrain(terrain);
+        pos = terrain.randomPositionOnTerrain();
     } while (pos.y < 0.6);
     createTree(pos);
 }

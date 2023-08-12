@@ -10,13 +10,13 @@ export class MapEditor extends GUIBase {
         super(controls);
         this.html = `
         <div class="ui-base ui-top-right">
-            <button id="editor-select-mode">Select</button>
+            <button id="editor-select-mode" disabled>Select</button>
             <button id="editor-height-mode">Edit terrain height</button>
-            <button id="editor-texture-mode">Edit terrain texture</button>
-            <span class="ui-label" id="editor-current-mode">select mode</span>
+            <button id="editor-texture-mode" disabled>Edit terrain texture</button>
+            <span class="ui-label" id="editor-current-mode">height mode</span>
         </div>
         `
-        this.mode = MapEditorMode.SelectMode;
+        this.mode = MapEditorMode.HeightMode;
     }
 
     getHtml(): string {
