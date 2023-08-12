@@ -1,9 +1,11 @@
 import * as THREE from "three";
 
+import { AssetManager } from "../assetman";
+
 const HEIGHTMAP_TILE_SCALE = 0.1;
 const HEIGHTMAP_HEIGHT_SCALE = 6.0;
 
-const getImageData = (img) => {
+function getImageData(img: HTMLImageElement): ImageData {
     // Canvas is not added to DOM and therefore cleaned up on exit
     const cv = document.createElement("canvas");
     cv.width = img.width;
@@ -13,20 +15,20 @@ const getImageData = (img) => {
     return ctx.getImageData(0, 0, img.width, img.height);
 }
 
-function getCenterOfTerrain(heightmapData) {
+function getCenterOfTerrain(heightmapData: ImageData) {
     return [
         heightmapData.width * HEIGHTMAP_TILE_SCALE * 0.5,
         heightmapData.height * HEIGHTMAP_TILE_SCALE * 0.5
     ];
 }
 
-function getHeightValue(heightmapData, x, y) {
+function getHeightValue(heightmapData: ImageData, x: number, y: number): number {
     const dataIdx = (y * heightmapData.width + x);
     // Greyscale, it does not matter
     return heightmapData.data.at(dataIdx * 4) / 255 * HEIGHTMAP_HEIGHT_SCALE;
 }
 
-function getHeightFromPosition(heightmapData, x, y) {
+function getHeightFromPosition(heightmapData: ImageData, x: number, y: number) {
     x = Math.floor(x / HEIGHTMAP_TILE_SCALE);
     y = Math.floor(y / HEIGHTMAP_TILE_SCALE);
     if (x >= 0 && x < heightmapData.width && y >= 0 && y < heightmapData.height) {
@@ -36,7 +38,7 @@ function getHeightFromPosition(heightmapData, x, y) {
     }
 }
 
-function createTerrainMesh(heightmapData) {
+function createTerrainMesh(heightmapData: ImageData, assets: AssetManager) {
     let geometry = new THREE.BufferGeometry();
 
     // Create vertices from height map
@@ -79,26 +81,9 @@ function createTerrainMesh(heightmapData) {
     geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
     geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
     geometry.setIndex(indices);
-    const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x42ff42, wireframe: false }));
-    mesh.receiveShadow = true;
-    // Center around origin
-    return mesh;
-}
-
-function randomPositionOnTerrain(heightmapData) {
-    const x = heightmapData.width * Math.random();
-    const y = heightmapData.height * Math.random();
-    return new THREE.Vector3(x * HEIGHTMAP_TILE_SCALE, getHeightValue(heightmapData, Math.floor(x), Math.floor(y)), y * HEIGHTMAP_TILE_SCALE);
-}
-
-async function loadTerrain(heightmap, assets) {
-    const img = await new THREE.ImageLoader().loadAsync("assets/" + heightmap);
-    const data = getImageData(img);
-
-    const mesh = createTerrainMesh(data);
-
-    // Initialize terrain shader (blends textures based on height)
-    mesh.material = new THREE.ShaderMaterial({
+    
+    // Initialize mesh with terrain shader
+    const mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
         uniforms: {
             // TODO: Use a texture map instead of the height value? This would possibly allow for more flexible texturing, too
             dirt: { value: assets.textures["dirt.png"]},
@@ -109,7 +94,23 @@ async function loadTerrain(heightmap, assets) {
         },
         vertexShader: assets.shaders["shaders/passthrough.glsl"],
         fragmentShader: assets.shaders["shaders/splat.glsl"],
-    });
+    }));
+    mesh.receiveShadow = true;
+    // Center around origin
+    return mesh;
+}
+
+function randomPositionOnTerrain(heightmapData: ImageData) {
+    const x = heightmapData.width * Math.random();
+    const y = heightmapData.height * Math.random();
+    return new THREE.Vector3(x * HEIGHTMAP_TILE_SCALE, getHeightValue(heightmapData, Math.floor(x), Math.floor(y)), y * HEIGHTMAP_TILE_SCALE);
+}
+
+async function loadTerrain(heightmap: ImageData, assets: AssetManager) {
+    const img = await new THREE.ImageLoader().loadAsync("assets/" + heightmap);
+    const data = getImageData(img);
+
+    const mesh = createTerrainMesh(data, assets);
 
     return [mesh, data];
 }

@@ -80,4 +80,5 @@ export {
     loadTextures,
     loadGLTFs,
     loadAssets,
+    AssetManager,
 }
