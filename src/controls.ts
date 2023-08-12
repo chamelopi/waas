@@ -4,26 +4,29 @@
  */
 export class Controls {
 
-    constructor() {
+    private keystate: any;
+    private mouseState: any;
+
+    constructor(canvas: HTMLCanvasElement) {
         this.keystate = {};
         this.mouseState = {};
 
         document.addEventListener("keyup", e => this.keyUpListener(e));
         document.addEventListener("keydown", e => this.keyDownListener(e));
-        document.addEventListener("mousedown", e => this.mouseDownListener(e));
-        document.addEventListener("mouseup", e => this.mouseUpListener(e));
+        canvas.addEventListener("mousedown", e => this.mouseDownListener(e));
+        canvas.addEventListener("mouseup", e => this.mouseUpListener(e));
         // Prevent right click context menu
-        document.addEventListener("contextmenu", e => {
+        canvas.addEventListener("contextmenu", e => {
             e.preventDefault();
             return false;
         });
     }
 
-    isInputElement() {
+    isInputElement(): boolean {
         return ["input", "button"].indexOf(document.activeElement.tagName.toLowerCase()) >= 0;
     }
 
-    isCanvasElement() {
+    isCanvasElement(): boolean {
         return document.activeElement.tagName === "canvas";
     }
 
@@ -69,7 +72,7 @@ export class Controls {
     /**
      * Returns state for a specified key or all keys
      */
-    getKeyState(key) {
+    getKeyState(key: any): boolean {
         if (key) {
             return !!(this.keystate[key]);
         } else {
@@ -79,19 +82,26 @@ export class Controls {
 
     /**
      * Returns mouse button state
+     * 
+     * 0: left mouse button
+     * 1: middle mouse button
+     * 2: right mouse button
      */
-    getMouseState(button) {
+    getMouseState(button: number): boolean {
         return !!(this.mouseState[button]);
     }
 
     /**
-     * Resets all keystates at the end of the frame
+     * Resets all keystates/mouse states
      */
     reset() {
         for (const [k, v] of Object.entries(this.keystate)) {
             if (v) {
                 this.keystate[k] = false;
             }
+        }
+        for(const i in [0, 1, 2]) {
+            this.mouseState[i] = false;
         }
     }
 }

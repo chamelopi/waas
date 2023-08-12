@@ -23,7 +23,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // Y is set later based on terrain height
 camera.position.set(1, 0, 3);
 camera.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 4);
-const controls = new Controls();
+const controls = new Controls(renderer.domElement);
 const camControl = new CameraControls(camera, controls);
 
 // Load assets
