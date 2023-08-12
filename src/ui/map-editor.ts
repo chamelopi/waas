@@ -77,14 +77,13 @@ export class MapEditor extends GUIBase {
     }
 
     updateHeight(intersection: THREE.Intersection<THREE.Object3D<THREE.Event>>) {
+        // TODO: Increase or decrease height
         const up = this.controls.getMouseState(0) ? true : false;
         
         const localPoint = this.terrain.mesh.worldToLocal(intersection.point);
-        console.log(`localPoint: ${localPoint.x} / ${localPoint.y} / ${localPoint.z}`);
 
         localPoint.x = Math.floor(localPoint.x / HEIGHTMAP_TILE_SCALE);
         localPoint.z = Math.floor(localPoint.z / HEIGHTMAP_TILE_SCALE);
-        console.log(`updating height at ${localPoint.x}/${localPoint.z}`);
 
         const center = new THREE.Vector2(localPoint.x, localPoint.z);
         const radius = 10

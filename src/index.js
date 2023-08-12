@@ -44,8 +44,18 @@ const skybox = makeSkybox(assets.textures, "envmap_miramar", "miramar", "png");
 scene.add(skybox);
 
 // TODO: We could use sin and cos to simulate small waves in a custom vertex shader
-const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64),
-    new THREE.MeshBasicMaterial({ map: assets.textures["water.png"], transparent: true, opacity: 0.65 }));
+const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64, 128, 128),
+    new THREE.ShaderMaterial({
+        uniforms: {
+            waterTexture: { value: assets.textures["water.png"] },
+            perlin: { value: assets.textures["perlin.png"] },
+            time: { value: 0.0 },
+        },
+        vertexShader: assets.shaders["shaders/water-vertex.glsl"],
+        fragmentShader: assets.shaders["shaders/water-fragment.glsl"],
+        transparent: true,
+    }));
+    //new THREE.MeshBasicMaterial({ map: assets.textures["water.png"], transparent: true, opacity: 0.65 }));
 water.position.set(32, 0.6, 32);
 water.rotation.x = -Math.PI / 2;
 scene.add(water);
@@ -95,6 +105,8 @@ function animate() {
 
     guiMan.update();
 
+    water.material.uniforms.time = { value: performance.now() / 1000 };
+    water.material.needsUpdate = true;
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
