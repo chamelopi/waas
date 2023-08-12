@@ -1,9 +1,11 @@
-# A nice 3D sandbox
+# WaaS (World as a Service)
+
+3D terrain sandbox, playground for my gamedev experiments.
 
 ## Local dev environment
 
 ```
-# If assets have changed
+# If assets have changed / new ones have been added
 node build-asset-list.js
 npm run dev
 ```
@@ -16,12 +18,16 @@ Note: If Firefox has "resistFingerprinting" enabled, rendering is broken :(
 npm run build
 ```
 
+### Features
+
+- Water (no waves/animation yet)
+- Skybox
+- Doodad objects on the map (tree)
+- Terrain texturing based on height
+- Height editing (in progress)
+
 ### Next TODOs
 
-- heightmap on GPU?
-- implement heightmap editing
-
-- Implement Water shader (example: https://github.com/mrdoob/three.js/blob/master/examples/webgl_shaders_ocean.html)
-- Fix lighting (HemisphereLight cannot cast shadow, our terrain shader does not respect light atm)
-
-- Show FPS
+- Make doodads react on height changes (adjust to correct height)
+- Texture painting (needs a different terrain shader)
+- Placing doodads
