@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Controls } from "../controls";
-import { Terrain } from "../terrain/terrain";
+import { HEIGHTMAP_TILE_SCALE, Terrain } from "../terrain/terrain";
 import { GUIBase } from "./gui-base";
 
 export class MapEditor extends GUIBase {
@@ -57,13 +57,47 @@ export class MapEditor extends GUIBase {
             this.terrain.updateUniforms(true, 1, positionOnMesh);
         } else {
             this.terrain.updateUniforms(false, 0, new THREE.Vector2(0, 0));
+            return;
         }
 
-        if (this.controls.getMouseState(0)) {
-            console.log("up");
-        } else if (this.controls.getMouseState(2)) {
-            console.log("down");
+        if (this.controls.getMouseState(0) || this.controls.getMouseState(2)) {
+            switch(this.mode) {
+                case MapEditorMode.SelectMode:
+                    TODO:
+                    break;
+                case MapEditorMode.HeightMode:
+                    TODO:
+                    this.updateHeight(intersects[0]);
+                    break;
+                case MapEditorMode.TextureMode:
+                    TODO:
+                    break;
+            }
         }
+    }
+
+    updateHeight(intersection: THREE.Intersection<THREE.Object3D<THREE.Event>>) {
+        const up = this.controls.getMouseState(0) ? true : false;
+        
+        const localPoint = this.terrain.mesh.worldToLocal(intersection.point);
+        console.log(`localPoint: ${localPoint.x} / ${localPoint.y} / ${localPoint.z}`);
+
+        localPoint.x = Math.floor(localPoint.x / HEIGHTMAP_TILE_SCALE);
+        localPoint.z = Math.floor(localPoint.z / HEIGHTMAP_TILE_SCALE);
+        console.log(`updating height at ${localPoint.x}/${localPoint.z}`);
+
+        const center = new THREE.Vector2(localPoint.x, localPoint.z);
+        const radius = 10
+        for (let i = -radius; i < radius; i++) {
+            for (let j = -radius; j < radius; j++) {
+                const offset = new THREE.Vector2(localPoint.x + i, localPoint.z + j);
+                
+                if (offset.distanceTo(center) <= radius) {
+                    this.terrain.setHeight(offset.x, offset.y, 127);
+                }
+            }
+        }
+        this.terrain.flush();
     }
 }
 

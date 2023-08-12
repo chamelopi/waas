@@ -67,6 +67,22 @@ class Terrain {
         const y = this.height * Math.random();
         return new THREE.Vector3(x * HEIGHTMAP_TILE_SCALE, this.getHeightValue(Math.floor(x), Math.floor(y)), y * HEIGHTMAP_TILE_SCALE);
     }
+
+    /**
+     * h should be in between 0 and 255.
+     */
+    setHeight(x: number, y: number, h: number) {
+        const dataIdx = y * this.width + x;
+        if (dataIdx >= 0 && dataIdx <= (this.width * this.height) && (h >= 0 && h <= 255)) {
+            this.data[dataIdx] = h;
+            const positions = this.mesh.geometry.getAttribute("position");
+            positions.setY(dataIdx, h / 255 * HEIGHTMAP_HEIGHT_SCALE);
+        }
+    }
+
+    flush() {
+        this.mesh.geometry.getAttribute("position").needsUpdate = true;
+    }
 }
 
 function getImageData(img: HTMLImageElement): ImageData {

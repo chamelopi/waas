@@ -11,7 +11,7 @@ const CAMERA_ENABLE = "c";
 
 const CAMERA_SPEED = 0.005;
 const CAMERA_ROT_SPEED = 0.002 * Math.PI/4
-const CAMERA_Y_OFFSET = 5;
+const CAMERA_Y_OFFSET = 10;
 
 /**
  * Basic RTS camera control with WASD
