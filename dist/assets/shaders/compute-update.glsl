@@ -1,10 +1,11 @@
-uniform sampler2D inputTexture;
-uniform vec2 size;
 uniform float time;
 
-void main() {
-    vec2 uv = gl_FragCoord.xy / size;
+// 'resolution' is an implicit #define (vec2) containing the input texture's size
 
-    float red = texture2D(inputTexture, uv).r - time;
-    gl_FragColor.r = max(0.0, red);
+void main() {
+    vec2 uv = gl_FragCoord.xy / resolution;
+    
+    float value = texture2D(inputTexture, uv).r;
+    // Halves the value every computation step to show propagation
+    gl_FragColor.r = value / 2.0;
 }

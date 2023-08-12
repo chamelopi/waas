@@ -20,8 +20,7 @@ document.body.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-// Y is set later based on terrain height
-camera.position.set(1, 0, 3);
+
 camera.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 4);
 const controls = new Controls(renderer.domElement);
 const camControl = new CameraControls(camera, controls);
@@ -38,14 +37,13 @@ document.querySelector("#loading").classList.add("invisible");
 scene.add(terrain);
 // Move camera to center of terrain
 const center = getCenterOfTerrain(heightmap);
+// Y is set later based on terrain height
 camera.position.x = center[0];
 camera.position.z = center[1];
 
 // TODO: Refactor skybox + water mesh into 'basic env setup function'
 const skybox = makeSkybox(assets.textures, "envmap_miramar", "miramar", "png");
 scene.add(skybox);
-
-const gpuCompute = new ComputeShaderRunner(renderer, new THREE.Vector2(32, 32), assets);
 
 // TODO: We could use sin and cos to simulate small waves in a custom vertex shader
 const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64),
@@ -79,28 +77,28 @@ controls.onKeyUp("t", () => {
 });
 
 
-let initialData = new Uint8Array(gpuCompute.dims.x * gpuCompute.dims.y);
-initialData.fill(1);
-gpuCompute.uploadData(initialData);
+camControl.camera.position.set(8, 1, 8);
+
+
+const gpuCompute = new ComputeShaderRunner(renderer, new THREE.Vector2(32, 32), assets);
+
+let initialData = new Float32Array(gpuCompute.dims.x * gpuCompute.dims.y * 4);
+initialData.fill(1.0);
+gpuCompute.initialize(initialData, "compute-update");
 
 let guiMan = new GUIManager(controls);
 guiMan.show("map-editor");
 guiMan.getCurrentView().addEvent("click", "shader-run", () => {
-    gpuCompute.computeTexture("compute-update", {
-        time: { value: 0.24 }
-    });
-    gpuCompute.swapTextures();
+    const outputTexture = gpuCompute.computeFrame(0.24);
 
-    // inTexture contains output from previous frame now
-    cubeShader.uniforms.myTexture = gpuCompute.getInTexture();
+    cubeShader.uniforms.myTexture = outputTexture;
     cubeShader.needsUpdate = true;
+    console.log("updated!", gpuCompute.downloadData());
 });
-
-camControl.camera.position.set(8, 1, 8);
 
 let cubeShader = new ShaderMaterial({
     uniforms: {
-        myTexture: { value: gpuCompute.getInTexture() },
+        myTexture: { value: null },
     },
     vertexShader: assets.shaders["shaders/passthrough.glsl"],
     fragmentShader: assets.shaders["shaders/test-showtexture.glsl"],
