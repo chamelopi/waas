@@ -7,8 +7,8 @@ export class MapEditor extends GUIBase {
 
     private html: string;
     private mode: MapEditorMode;
-    // TODO: enum
     private terrainMode: TerrainEditMode;
+    private brushRadius: number;
 
     constructor(controls: Controls, private terrain: Terrain, private raycaster: THREE.Raycaster, private camera: THREE.Camera) {
         super(controls);
@@ -21,12 +21,15 @@ export class MapEditor extends GUIBase {
             <span class="ui-label ui-larger" id="editor-current-mode">height mode</span>
             <p>
             <fieldset id="editor-terrain-options">
-                <input type="radio" id="editor-terrain-raise-lower" name="editor-terrain-mode" value="raise-lower" checked/>
+                <input type="radio" id="editor-terrain-raise-lower" name="editor-terrain-mode" value="raise-lower" checked />
                 <label for="plateau">Raise / lower</label>
-                <input type="radio" id="editor-terrain-smoothen" name="editor-terrain-mode" value="smoothen"/>
+                <input type="radio" id="editor-terrain-smoothen" name="editor-terrain-mode" value="smoothen" />
                 <label for="plateau">Smoothen</label>
-                <input type="radio" id="editor-terrain-plateau" name="editor-terrain-mode" value="plateau"/>
+                <input type="radio" id="editor-terrain-plateau" name="editor-terrain-mode" value="plateau" />
                 <label for="plateau">Plateau</label>
+                <br>
+                <input type="range" id="editor-terrain-brush-radius" name="editor-terrain-brush-radius" min="1" max="15" value="10" />
+                <label for="editor-brush-radius">Brush radius</label>
             </fieldset>
             <p>
             <span class="ui-label" id="editor-hint">Left-click to add height, right-click to remove it</span>
@@ -34,6 +37,7 @@ export class MapEditor extends GUIBase {
         `
         this.mode = MapEditorMode.HeightMode;
         this.terrainMode = TerrainEditMode.RaiseLower;
+        this.brushRadius = 10;
     }
 
     getHtml(): string {
@@ -59,15 +63,36 @@ export class MapEditor extends GUIBase {
         });
         const terrainModeChangeHandler = (e) => {
             this.terrainMode = e.target.value as TerrainEditMode;
-            // TODO: Set appropriate editor hint
+            this.setText("editor-hint", this.getEditorHint());
         };
         this.addEvent("change", "editor-terrain-plateau", terrainModeChangeHandler);
         this.addEvent("change", "editor-terrain-raise-lower", terrainModeChangeHandler);
         this.addEvent("change", "editor-terrain-smoothen", terrainModeChangeHandler);
+        this.addEvent("change", "editor-terrain-brush-radius", () => {
+            this.brushRadius = parseInt(this.getValue("editor-terrain-brush-radius"));
+        });
     }
 
     onHide(): void {
         super.onHide();
+    }
+
+    getEditorHint() {
+        switch(this.mode) {
+            case MapEditorMode.SelectMode:
+                return "Select entities with left click. Teleport them to a new position with right click."
+            case MapEditorMode.HeightMode:
+                switch(this.terrainMode) {
+                    case TerrainEditMode.RaiseLower:
+                        return "Left-click to add height, right-click to remove it";
+                    case TerrainEditMode.Plateau:
+                        return "Left-click on a point on the map to create a plateau at that height";
+                    case TerrainEditMode.Smoothen:
+                        return "Left-click to smoothen height transitions";
+                }
+            case MapEditorMode.TextureMode:
+                return "Select a texture to paint on the landscape and left-click to paint it.";
+        }
     }
 
     onUpdate(dt: Number): void {
@@ -79,7 +104,7 @@ export class MapEditor extends GUIBase {
 
         if (intersects.length > 0) {
             const positionOnMesh = new THREE.Vector2(intersects[0].point.x, intersects[0].point.z);
-            this.terrain.updateUniforms(true, 1, positionOnMesh);
+            this.terrain.updateUniforms(true, this.brushRadius / 10, positionOnMesh);
         } else {
             this.terrain.updateUniforms(false, 0, new THREE.Vector2(0, 0));
             return;
@@ -91,7 +116,6 @@ export class MapEditor extends GUIBase {
                     TODO:
                     break;
                 case MapEditorMode.HeightMode:
-                    TODO:
                     this.updateHeight(intersects[0]);
                     break;
                 case MapEditorMode.TextureMode:
@@ -106,7 +130,7 @@ export class MapEditor extends GUIBase {
         const factor = this.controls.getMouseState(0) ? 1 : -1;
         // TODO: Make configurable
         const amount = 0.2;
-        const radius = 10
+        const radius = this.brushRadius;
         
         const localPoint = this.terrain.mesh.worldToLocal(intersection.point);
 

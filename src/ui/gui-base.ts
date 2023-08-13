@@ -40,6 +40,15 @@ export abstract class GUIBase {
         }
     }
 
+    getValue(elemId: string): string | null {
+        var elem = document.getElementById(elemId);
+        if (elem != null && elem instanceof HTMLInputElement && elem.value) {
+            return elem.value;
+        } else {
+            return null;
+        }
+    }
+
     setText(elemId: string, text: string) {
         var elem = document.getElementById(elemId);
         if (elem != null && elem.innerHTML) {

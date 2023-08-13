@@ -22,6 +22,7 @@ npm run build
 
 ### Features
 
+- Camera movement with WASD, turning with Q and E, reset rotation with SPACE
 - Animated water
 - Skybox
 - Doodad objects on the map (tree)
@@ -29,7 +30,7 @@ npm run build
 - Height editing (in progress)
   - add/remove terrain
   - create plateau
-  - TODO: smoothen
+  - smoothen heights
 
 ### Next TODOs
 
