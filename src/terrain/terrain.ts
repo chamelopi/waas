@@ -69,14 +69,14 @@ class Terrain {
     }
 
     /**
-     * h should be in between 0 and 255.
+     * h should be in between 0 and HEIGHTMAP_HEIGHT_SCALE.
      */
     setHeight(x: number, y: number, h: number) {
         const dataIdx = y * this.width + x;
-        if (dataIdx >= 0 && dataIdx <= (this.width * this.height) && (h >= 0 && h <= 255)) {
-            this.data[dataIdx] = h;
+        if (dataIdx >= 0 && dataIdx <= (this.width * this.height) && (h >= 0 && h <= HEIGHTMAP_HEIGHT_SCALE)) {
+            this.data[dataIdx] = h * 255 / HEIGHTMAP_HEIGHT_SCALE;
             const positions = this.mesh.geometry.getAttribute("position");
-            positions.setY(dataIdx, h / 255 * HEIGHTMAP_HEIGHT_SCALE);
+            positions.setY(dataIdx, h);
         }
     }
 

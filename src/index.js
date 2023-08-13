@@ -43,7 +43,7 @@ camera.position.z = center[1];
 const skybox = makeSkybox(assets.textures, "envmap_miramar", "miramar", "png");
 scene.add(skybox);
 
-// TODO: We could use sin and cos to simulate small waves in a custom vertex shader
+// 128 segments in each direction, so that we have some vertices to transform
 const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64, 128, 128),
     new THREE.ShaderMaterial({
         uniforms: {

@@ -46,6 +46,17 @@ export abstract class GUIBase {
             elem.innerHTML = text;
         }
     }
+
+    setVisible(elemId: string, visible: boolean) {
+        var elem = document.getElementById(elemId);
+        if (elem != null) {
+            if (visible) {
+                elem.classList.remove("invisible");
+            } else {
+                elem.classList.add("invisible");
+            }
+        }
+    }
 }
 
 interface EventData {

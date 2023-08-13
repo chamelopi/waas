@@ -2,6 +2,8 @@
 
 3D terrain sandbox, playground for my gamedev experiments.
 
+![Example image](waas.png)
+
 ## Local dev environment
 
 ```
@@ -20,15 +22,17 @@ npm run build
 
 ### Features
 
-- Water (no waves/animation yet)
+- Animated water
 - Skybox
 - Doodad objects on the map (tree)
 - Terrain texturing based on height
 - Height editing (in progress)
+  - add/remove terrain
+  - create plateau
+  - TODO: smoothen
 
 ### Next TODOs
 
-- Water shader
 - Make doodads react on height changes (adjust to correct height)
-- Texture painting (needs a different terrain shader)
+- Texture painting (needs a different, more complex terrain shader)
 - Placing doodads
