@@ -3,15 +3,17 @@ import { GUIBase } from "./gui-base";
 import { Controls } from "../controls";
 import { Terrain } from "../terrain/terrain";
 import * as THREE from "three";
+import { EntityManager } from "../entity-manager";
 
 export class GUIManager {
 
     private views: Record<ViewName, GUIBase>;
     private currentView?: string;
+    private entityManager;
 
-    constructor(controls: Controls, terrain: Terrain, camera: THREE.Camera) {
+    constructor(controls: Controls, terrain: Terrain, camera: THREE.Camera, entityManager: EntityManager) {
         this.views = {
-            "map-editor": new MapEditor(controls, terrain, new THREE.Raycaster(), camera),
+            "map-editor": new MapEditor(controls, terrain, new THREE.Raycaster(), camera, entityManager),
         };
     }
 

@@ -6,6 +6,7 @@ import { CameraControls } from "./camera-controls";
 import { Doodads } from "./doodads";
 import { Controls } from "./controls";
 import { GUIManager } from "./ui/gui-manager";
+import { EntityManager } from "./entity-manager";
 
 const scene = new THREE.Scene();
 
@@ -61,13 +62,12 @@ water.rotation.x = -Math.PI / 2;
 scene.add(water);
 
 // TODO: Create objects based on config/map file or sth
-let container = new THREE.Group();
-scene.add(container);
+const entityManager = new EntityManager(assets, terrain);
+scene.add(entityManager.container);
 
 // Create random trees
-const trees = new Doodads(assets.getMesh("tree.glb"), assets.textures["ImphenziaPalette01.png"], container);
 function createTree(pos) {
-    trees.add(pos, Math.random() * 2 * Math.PI, 0.05);
+    entityManager.createDoodad("tree", pos, Math.random() * 2 * Math.PI, 0.05);
 }
 function createRandomTree(terrain) {
     let pos;
@@ -84,8 +84,7 @@ controls.onKeyUp("t", () => {
     createRandomTree(terrain);
 });
 
-
-let guiMan = new GUIManager(controls, terrain, camera);
+let guiMan = new GUIManager(controls, terrain, camera, entityManager);
 guiMan.show("map-editor");
 
 

@@ -69,6 +69,13 @@ class Terrain {
     }
 
     /**
+     * Returns 3D world vector for 2D terrain position (includes height)
+     */
+    toWorldPos(terrainPos: THREE.Vector2) {
+        return new THREE.Vector3(terrainPos.x, this.getHeightFromPosition(terrainPos.x, terrainPos.y), terrainPos.y);
+    }
+
+    /**
      * h should be in between 0 and HEIGHTMAP_HEIGHT_SCALE.
      */
     setHeight(x: number, y: number, h: number) {

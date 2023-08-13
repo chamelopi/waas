@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { Controls } from "../controls";
 import { HEIGHTMAP_TILE_SCALE, Terrain } from "../terrain/terrain";
 import { GUIBase } from "./gui-base";
+import { EntityManager } from "../entity-manager";
 
 export class MapEditor extends GUIBase {
 
@@ -10,7 +11,7 @@ export class MapEditor extends GUIBase {
     private terrainMode: TerrainEditMode;
     private brushRadius: number;
 
-    constructor(controls: Controls, private terrain: Terrain, private raycaster: THREE.Raycaster, private camera: THREE.Camera) {
+    constructor(controls: Controls, private terrain: Terrain, private raycaster: THREE.Raycaster, private camera: THREE.Camera, private entityManager: EntityManager) {
         super(controls);
         this.html = `
         <div class="ui-base ui-top-right">
@@ -95,7 +96,8 @@ export class MapEditor extends GUIBase {
         }
     }
 
-    onUpdate(dt: Number): void {
+    onUpdate(_dt: Number): void {
+        // TODO: Refactor into utility function on Terrain
         // Update brush visualization
         const mousePos = this.controls.getMousePos();
         //this.terrain.updateUniforms(true, 80, new THREE.Vector2(mousePos.x, window.innerHeight - mousePos.y));
@@ -128,7 +130,6 @@ export class MapEditor extends GUIBase {
     updateHeight(intersection: THREE.Intersection<THREE.Object3D<THREE.Event>>) {
         // Increase or decrease height
         const factor = this.controls.getMouseState(0) ? 1 : -1;
-        // TODO: Make configurable
         const amount = 0.2;
         const radius = this.brushRadius;
         
@@ -172,6 +173,8 @@ export class MapEditor extends GUIBase {
             }
         }
         this.terrain.flush();
+        // Update height values for all entities
+        this.entityManager.updateHeights();
     }
 }
 
