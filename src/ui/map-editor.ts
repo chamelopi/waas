@@ -7,7 +7,8 @@ export class MapEditor extends GUIBase {
 
     private html: string;
     private mode: MapEditorMode;
-    private plateau: boolean;
+    // TODO: enum
+    private terrainMode: TerrainEditMode;
 
     constructor(controls: Controls, private terrain: Terrain, private raycaster: THREE.Raycaster, private camera: THREE.Camera) {
         super(controls);
@@ -19,12 +20,20 @@ export class MapEditor extends GUIBase {
             <button id="editor-texture-mode" disabled>Edit terrain texture</button>
             <span class="ui-label ui-larger" id="editor-current-mode">height mode</span>
             <p>
-            <input type="checkbox" id="editor-plateau" title="enable this to create flat surfaces" /><label id="editor-plateau-label" for="editor-plateau">Plateau</label>
+            <fieldset id="editor-terrain-options">
+                <input type="radio" id="editor-terrain-raise-lower" name="editor-terrain-mode" value="raise-lower" checked/>
+                <label for="plateau">Raise / lower</label>
+                <input type="radio" id="editor-terrain-smoothen" name="editor-terrain-mode" value="smoothen"/>
+                <label for="plateau">Smoothen</label>
+                <input type="radio" id="editor-terrain-plateau" name="editor-terrain-mode" value="plateau"/>
+                <label for="plateau">Plateau</label>
+            </fieldset>
             <p>
             <span class="ui-label" id="editor-hint">Left-click to add height, right-click to remove it</span>
         </div>
         `
         this.mode = MapEditorMode.HeightMode;
+        this.terrainMode = TerrainEditMode.RaiseLower;
     }
 
     getHtml(): string {
@@ -36,24 +45,25 @@ export class MapEditor extends GUIBase {
         this.addEvent("click", "editor-height-mode", () => {
             this.setText("editor-current-mode", "height mode");
             this.mode = MapEditorMode.HeightMode;
-            this.setVisible("editor-plateau", true);
-            this.setVisible("editor-plateau-label", true);
+            this.setVisible("editor-terrain-options", true);
         });
         this.addEvent("click", "editor-texture-mode", () => {
             this.setText("editor-current-mode", "texture mode");
             this.mode = MapEditorMode.TextureMode;
-            this.setVisible("editor-plateau", false);
-            this.setVisible("editor-plateau-label", false);
+            this.setVisible("editor-terrain-options", false);
         });
         this.addEvent("click", "editor-select-mode", () => {
             this.setText("editor-current-mode", "select mode");
             this.mode = MapEditorMode.SelectMode;
-            this.setVisible("editor-plateau", false);
-            this.setVisible("editor-plateau-label", false);
+            this.setVisible("editor-terrain-options", false);
         });
-        this.addEvent("change", "editor-plateau", () => {
-            this.plateau = !this.plateau;
-        })
+        const terrainModeChangeHandler = (e) => {
+            this.terrainMode = e.target.value as TerrainEditMode;
+            // TODO: Set appropriate editor hint
+        };
+        this.addEvent("change", "editor-terrain-plateau", terrainModeChangeHandler);
+        this.addEvent("change", "editor-terrain-raise-lower", terrainModeChangeHandler);
+        this.addEvent("change", "editor-terrain-smoothen", terrainModeChangeHandler);
     }
 
     onHide(): void {
@@ -112,10 +122,20 @@ export class MapEditor extends GUIBase {
                 
                 // Check if we are within the circle
                 if (offset.distanceTo(center) <= radius) {
-                    if (this.plateau) {
+                    if (this.terrainMode === TerrainEditMode.Plateau) {
                         // Plateau editing functionality - set everything to the center's height
                         const heightValue = this.terrain.getHeightValue(center.x, center.y);
                         this.terrain.setHeight(offset.x, offset.y, heightValue);
+                    } else if (this.terrainMode === TerrainEditMode.Smoothen) {
+                        // Apply gaussian filter to this vertex & the 8 neighbouring vertices
+                        let sum = 0;
+                        for (let k = -1; k < 2; k++) {
+                            for (let l = -1; l < 2; l++) {
+                                sum += this.terrain.getHeightValue(offset.x + k, offset.y + l);;
+                            }
+                        }
+                        const avg = sum / 9;
+                        this.terrain.setHeight(offset.x, offset.y, avg);
                     } else {
                         // Scale the height amount with the distance from center to get a nice gradual ascent or descent
                         const distFactor = 1 - (offset.distanceTo(center) / radius)
@@ -135,4 +155,10 @@ enum MapEditorMode {
     SelectMode,
     HeightMode,
     TextureMode,
+}
+
+enum TerrainEditMode {
+    RaiseLower = "raise-lower",
+    Plateau = "plateau",
+    Smoothen = "smoothen",
 }

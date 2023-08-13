@@ -31,8 +31,8 @@ export abstract class GUIBase {
     addEvent(eventName: string, elemId: string, callback: any) {
         const elem = document.getElementById(elemId);
         if (elem != null) {
-            elem.addEventListener(eventName, () => {
-                callback();
+            elem.addEventListener(eventName, (e) => {
+                callback(e);
                 // Prevents keys being registered as continuously pressed after button clicks
                 this.controls.reset();
             });
