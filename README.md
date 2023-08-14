@@ -35,6 +35,9 @@ npm run build
 ### Next TODOs
 
 - Add heightmap normals to enable lighting
+  - we will have to re-use a lot of three.js vertex shader chunks, like here: https://github.com/mrdoob/three.js/blob/master/examples/webgl_gpgpu_water.html#L174
+  - then we can use the phong lighting chunk for the actual lighting in the fragment shader
+  - we will need to include the uniforms of the Phong material, too: https://github.com/mrdoob/three.js/blob/master/examples/webgl_gpgpu_water.html#L402
 - Implement camera zoom
 - Texture painting (needs a different, more complex terrain shader + modification with compute shader)
 - Placing doodads

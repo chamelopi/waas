@@ -146,6 +146,8 @@ function createTerrainMesh(heightmapData: Uint8Array, width: number, height: num
     geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
     geometry.setIndex(indices);
 
+    geometry.computeVertexNormals();
+
     const terrainTypesArray = packTextures([
         // The order of these is important and has to correspond to the weight layers
         assets.textures["sand.jpg"], // r
@@ -175,6 +177,7 @@ function createTerrainMesh(heightmapData: Uint8Array, width: number, height: num
         fragmentShader: assets.shaders["shaders/terrain-weights-fragment.glsl"],
     }));
     mesh.receiveShadow = true;
+    mesh.castShadow = true;
     // Center around origin
     return mesh;
 }
