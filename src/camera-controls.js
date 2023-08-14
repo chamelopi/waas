@@ -11,7 +11,7 @@ const CAMERA_ENABLE = "c";
 
 const CAMERA_SPEED = 0.005;
 const CAMERA_ROT_SPEED = 0.002 * Math.PI/4
-const CAMERA_Y_OFFSET = 10;
+const CAMERA_Y_OFFSET = 8;
 
 /**
  * Basic RTS camera control with WASD
@@ -31,7 +31,7 @@ export class CameraControls {
     keyUpListener(ev) {
         // Special case: Rotation reset:
         if (ev.key == CAMERA_ROT_RESET) {
-            // Dirty hack, this "reset" only works when applied several times in a row
+            // Dirty hack, this "reset" only works when applied several times in a row (I don't know why)
             for (let i = 0; i < 10; ++i) {
                 const q = new THREE.Quaternion();
                 q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -this.camera.rotation.y);

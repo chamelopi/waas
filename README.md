@@ -26,14 +26,15 @@ npm run build
 - Animated water
 - Skybox
 - Doodad objects on the map (tree)
-- Terrain texturing based on height
-- Height editing (in progress)
+- Terrain texturing (rework in progress)
+- Height editing
   - add/remove terrain
   - create plateau
   - smoothen heights
 
 ### Next TODOs
 
-- Make doodads react on height changes (adjust to correct height)
-- Texture painting (needs a different, more complex terrain shader)
+- Add heightmap normals to enable lighting
+- Implement camera zoom
+- Texture painting (needs a different, more complex terrain shader + modification with compute shader)
 - Placing doodads

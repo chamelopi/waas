@@ -145,29 +145,69 @@ function createTerrainMesh(heightmapData: Uint8Array, width: number, height: num
     geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
     geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
     geometry.setIndex(indices);
+
+    const terrainTypesArray = packTextures([
+        // The order of these is important and has to correspond to the weight layers
+        assets.textures["sand.jpg"], // r
+        assets.textures["dirt.png"], // g
+        assets.textures["grass.png"], // b
+        assets.textures["rock.jpg"], // a
+    ]);
+    const weightsArray = packTextures([
+        assets.textures["weightmap-test.png"],
+    ]);
     
     // Initialize mesh with terrain shader
     const mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
         uniforms: {
-            // TODO: Use a texture map instead of the height value? This would possibly allow for more flexible texturing, too
-            dirt: { value: assets.textures["dirt.png"]},
-            sand: { value: assets.textures["sand.jpg"]},
-            rock: { value: assets.textures["rock.jpg"]},
-            grass: { value: assets.textures["grass.png"]},
-            heightScale: { value: HEIGHTMAP_HEIGHT_SCALE },
-
+            terrainTypes: { value: terrainTypesArray },
+            weights: { value: weightsArray },
+            // FIXME: hardcoded
+            terrainTypeCount: { value: 4 },
             // Parameters for map editor
             showBrush: { value: true },
             brushRadius: { value: 15, },
             mousePos: { value: new THREE.Vector2(0, 0), },
-            meshDimensions: { value: new THREE.Vector2(width, height), },
+            // Need to multiply by tile scale!
+            meshDimensions: { value: new THREE.Vector2(width, height).multiplyScalar(HEIGHTMAP_TILE_SCALE), },
         },
         vertexShader: assets.shaders["shaders/terrain-vertex.glsl"],
-        fragmentShader: assets.shaders["shaders/splat.glsl"],
+        fragmentShader: assets.shaders["shaders/terrain-weights-fragment.glsl"],
     }));
     mesh.receiveShadow = true;
     // Center around origin
     return mesh;
+}
+
+/**
+ * Packs an array of textures into a DataArrayTexture. Copies all data and does not change the original textures
+ */
+function packTextures(textures: Array<THREE.Texture>): THREE.DataArrayTexture {
+    // https://github.com/mrdoob/three.js/blob/master/examples/webgl2_materials_texture2darray.html
+    // https://threejs.org/docs/?q=texture#api/en/textures/DataArrayTexture
+
+    const imageDataArray = textures.map(t => getImageData(t.image));
+    const depth = textures.length;
+    const width = imageDataArray[0].width;
+    const height = imageDataArray[0].height;
+    const size = width * height;
+    // x4 since a float/a color has 4 bytes
+    const buffer = new Uint8Array(depth * size * 4);
+
+    console.log(`packing ${depth} textures (${width} x ${height}) into a data array texture with size ${buffer.length}`);
+
+    for (let d = 0; d < depth; d++) {
+        if (imageDataArray[d].data.length != size*4) {
+            throw new Error(`Image ${d} does not have expected size ${size*4}, instead has ${imageDataArray[d].data.length}`);
+        }
+        buffer.set(imageDataArray[d].data, d * size * 4);
+    }
+
+    const texture = new THREE.DataArrayTexture(buffer, width, height, depth);
+    texture.format = THREE.RGBAFormat;
+    texture.needsUpdate = true;
+    
+    return texture;
 }
 
 async function loadTerrain(heightmapFilename: string, assets: AssetManager) {

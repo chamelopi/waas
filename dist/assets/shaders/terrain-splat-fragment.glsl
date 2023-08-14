@@ -18,6 +18,9 @@ float weight(float bottom, float top, float dist) {
     return dist / (top - bottom);
 }
 
+/**
+ * Texturizes terrain by using the height value as an interpolation weight between multiple textures
+ */
 void main() {
     float normalizedHeight = vHeight / heightScale;
 
@@ -37,8 +40,6 @@ void main() {
         + rockCol * smoothstep(0.55,0.65, normalizedHeight);
 
     if (showBrush) {
-        // NOTE: gl_FragCoord uses pixel center indexing (i.e. the bottom left pixel is 0.5/0.5, the next one over is 1.5/0.5, etc.)
-        // see: https://stackoverflow.com/questions/16825412/what-is-the-range-of-gl-fragcoord
         if (distance(mousePos, terrainPos) <= brushRadius) {
             // Darken
             ground.rgb = ground.rgb * 0.7;
