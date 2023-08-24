@@ -148,15 +148,19 @@ function createTerrainMesh(heightmapData: Uint8Array, width: number, height: num
 
     geometry.computeVertexNormals();
 
+    // FIXME: hardcoded
     const terrainTypesArray = packTextures([
         // The order of these is important and has to correspond to the weight layers
-        assets.textures["sand.jpg"], // r
-        assets.textures["dirt.png"], // g
-        assets.textures["grass.png"], // b
-        assets.textures["rock.jpg"], // a
+        assets.textures["sand.jpg"],
+        assets.textures["dirt.png"],
+        assets.textures["grass.png"],
+        assets.textures["rock.jpg"],
     ]);
     const weightsArray = packTextures([
-        assets.textures["weightmap-test.png"],
+        assets.textures["weights_sand.png"],
+        assets.textures["weights_dirt.png"],
+        assets.textures["weights_grass.png"],
+        assets.textures["weights_rock.png"],
     ]);
     
     // Initialize mesh with terrain shader

@@ -16,21 +16,10 @@ uniform vec2 mousePos;
 
 
 float getWeight(int terrainType, vec2 terrainUv) {
-    vec4 textureValue = texture(weights, vec3(terrainUv, terrainType / 4));
+    vec4 textureValue = texture(weights, vec3(terrainUv, terrainType));
 
-    // TODO: When using array textures, it might be better to just go for a single layer per terrain type
-    int typeOffset = terrainType % 4;
-    if (typeOffset == 0) {
-        return textureValue.r;
-    } else if (typeOffset == 1) {
-        return textureValue.g;
-    } else if (typeOffset == 2) {
-        return textureValue.b;
-    } else {
-        // FIXME: 1 - alpha for now because that is easier to generate in gimp :D
-        // this makes the rock texture look weird however
-        return 1.0 - textureValue.a;
-    }
+    // TODO: Is this still correct for weights edited via our editor functionality? Or just for manual painting?
+    return textureValue.a;
 }
 
 /**
