@@ -45,6 +45,17 @@ export abstract class GUIBase {
         if (elem != null && elem instanceof HTMLInputElement && elem.value) {
             return elem.value;
         } else {
+            console.warn(`no value for element ${elemId}`);
+            return null;
+        }
+    }
+
+    getSelectedIndex(elemId: string): number {
+        var elem = document.getElementById(elemId);
+        if (elem != null && elem instanceof HTMLSelectElement) {
+            return elem.selectedIndex;
+        } else {
+            console.warn(`no selected index for element ${elemId}`);
             return null;
         }
     }
@@ -53,6 +64,8 @@ export abstract class GUIBase {
         var elem = document.getElementById(elemId);
         if (elem != null && elem.innerHTML) {
             elem.innerHTML = text;
+        } else {
+            console.warn(`no innerHTML for element ${elemId}`);
         }
     }
 

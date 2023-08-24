@@ -14,6 +14,8 @@ class Terrain {
     public width: number;
     public height: number;
     public mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+    public terrainTypesArray: THREE.DataArrayTexture;
+    public terrainWeightsArray: THREE.DataArrayTexture;
 
     constructor(imageData: ImageData, assets: AssetManager) {
         this.data = new Uint8Array(imageData.width * imageData.height);
@@ -27,7 +29,90 @@ class Terrain {
 
         this.width = imageData.width;
         this.height = imageData.height;
-        this.mesh = createTerrainMesh(this.data, this.width, this.height, assets);
+        this.createTerrainMesh(this.data, this.width, this.height, assets);
+    }
+
+    createTerrainMesh(heightmapData: Uint8Array, width: number, height: number, assets: AssetManager) {
+        let geometry = new THREE.BufferGeometry();
+    
+        // Create vertices from height map
+        const vertices = new Float32Array(width * height * 3);
+        const uvs = new Float32Array(width * height * 2);
+        for (let i = 0; i < height; ++i) {
+            for (let j = 0; j < width; ++j) {
+                const dataIdx = (i * width + j);
+                const heightValue = heightmapData.at(dataIdx) / 255 * HEIGHTMAP_HEIGHT_SCALE;
+    
+                const idx = dataIdx * 3;
+                // Vertices should be between 0 and 1
+                vertices[idx] = j * HEIGHTMAP_TILE_SCALE;
+                // Y is up!
+                vertices[idx + 1] = heightValue;
+                vertices[idx + 2] = i * HEIGHTMAP_TILE_SCALE;
+                
+                // Alternate uvs to have the texture on the second triangle face the right way
+                uvs[dataIdx * 2] = j % 2 == 0 ? 0 : 1;
+                uvs[dataIdx * 2 + 1] = i % 2 == 0 ? 0 : 1;
+            }
+        }
+    
+        // Create indices to connect vertices in the correct way (we have 2 triangles for each 'tile')
+        const indices = [];
+        for (let i = 0; i < height - 1; i++) {
+            for (let j = 0; j < width - 1; j++) {
+                // Top triangle
+                indices.push(j + (i * width));
+                indices.push(j + ((i + 1) * width));
+                indices.push(j + 1 + (i * width));
+                // Bottom triangle
+                indices.push(j + 1 + (i * width));
+                indices.push(j + ((i + 1) * width));
+                indices.push(j + 1 + ((i + 1) * width));
+            }
+        }
+    
+        geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+        geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+        geometry.setIndex(indices);
+    
+        geometry.computeVertexNormals();
+    
+        // FIXME: hardcoded
+        this.terrainTypesArray = packTextures([
+            // The order of these is important and has to correspond to the weight layers
+            assets.textures["sand.jpg"],
+            assets.textures["dirt.png"],
+            assets.textures["grass.png"],
+            assets.textures["rock.jpg"],
+        ]);
+        this.terrainWeightsArray = packTextures([
+            assets.textures["weights_sand.png"],
+            assets.textures["weights_dirt.png"],
+            assets.textures["weights_grass.png"],
+            assets.textures["weights_rock.png"],
+        ]);
+        
+        // Initialize mesh with terrain shader
+        const mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
+            uniforms: {
+                terrainTypes: { value: this.terrainTypesArray },
+                weights: { value: this.terrainWeightsArray },
+                // FIXME: hardcoded
+                terrainTypeCount: { value: 4 },
+                // Parameters for map editor
+                showBrush: { value: true },
+                brushRadius: { value: 15, },
+                mousePos: { value: new THREE.Vector2(0, 0), },
+                // Need to multiply by tile scale!
+                meshDimensions: { value: new THREE.Vector2(width, height).multiplyScalar(HEIGHTMAP_TILE_SCALE), },
+            },
+            vertexShader: assets.shaders["shaders/terrain-vertex.glsl"],
+            fragmentShader: assets.shaders["shaders/terrain-weights-fragment.glsl"],
+        }));
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+        
+        this.mesh = mesh;
     }
 
     /**
@@ -87,6 +172,15 @@ class Terrain {
         }
     }
 
+    /**
+     * Adds weight for a specific texture at the selected position, using a circular brush.
+     * 
+     * REMOVES weight for all other textures accordingly.
+     */
+    paintTexture(center: THREE.Vector2, brushRadius: number, terrainTypeIndex: number) {
+        throw new Error("Method not implemented.");
+    }
+
     flush() {
         this.mesh.geometry.getAttribute("position").needsUpdate = true;
     }
@@ -103,88 +197,7 @@ function getImageData(img: HTMLImageElement): ImageData {
 }
 
 
-function createTerrainMesh(heightmapData: Uint8Array, width: number, height: number, assets: AssetManager) {
-    let geometry = new THREE.BufferGeometry();
 
-    // Create vertices from height map
-    const vertices = new Float32Array(width * height * 3);
-    const uvs = new Float32Array(width * height * 2);
-    for (let i = 0; i < height; ++i) {
-        for (let j = 0; j < width; ++j) {
-            const dataIdx = (i * width + j);
-            const heightValue = heightmapData.at(dataIdx) / 255 * HEIGHTMAP_HEIGHT_SCALE;
-
-            const idx = dataIdx * 3;
-            // Vertices should be between 0 and 1
-            vertices[idx] = j * HEIGHTMAP_TILE_SCALE;
-            // Y is up!
-            vertices[idx + 1] = heightValue;
-            vertices[idx + 2] = i * HEIGHTMAP_TILE_SCALE;
-            
-            // Alternate uvs to have the texture on the second triangle face the right way
-            uvs[dataIdx * 2] = j % 2 == 0 ? 0 : 1;
-            uvs[dataIdx * 2 + 1] = i % 2 == 0 ? 0 : 1;
-        }
-    }
-
-    // Create indices to connect vertices in the correct way (we have 2 triangles for each 'tile')
-    const indices = [];
-    for (let i = 0; i < height - 1; i++) {
-        for (let j = 0; j < width - 1; j++) {
-            // Top triangle
-            indices.push(j + (i * width));
-            indices.push(j + ((i + 1) * width));
-            indices.push(j + 1 + (i * width));
-            // Bottom triangle
-            indices.push(j + 1 + (i * width));
-            indices.push(j + ((i + 1) * width));
-            indices.push(j + 1 + ((i + 1) * width));
-        }
-    }
-
-    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
-    geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-    geometry.setIndex(indices);
-
-    geometry.computeVertexNormals();
-
-    // FIXME: hardcoded
-    const terrainTypesArray = packTextures([
-        // The order of these is important and has to correspond to the weight layers
-        assets.textures["sand.jpg"],
-        assets.textures["dirt.png"],
-        assets.textures["grass.png"],
-        assets.textures["rock.jpg"],
-    ]);
-    const weightsArray = packTextures([
-        assets.textures["weights_sand.png"],
-        assets.textures["weights_dirt.png"],
-        assets.textures["weights_grass.png"],
-        assets.textures["weights_rock.png"],
-    ]);
-    
-    // Initialize mesh with terrain shader
-    const mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
-        uniforms: {
-            terrainTypes: { value: terrainTypesArray },
-            weights: { value: weightsArray },
-            // FIXME: hardcoded
-            terrainTypeCount: { value: 4 },
-            // Parameters for map editor
-            showBrush: { value: true },
-            brushRadius: { value: 15, },
-            mousePos: { value: new THREE.Vector2(0, 0), },
-            // Need to multiply by tile scale!
-            meshDimensions: { value: new THREE.Vector2(width, height).multiplyScalar(HEIGHTMAP_TILE_SCALE), },
-        },
-        vertexShader: assets.shaders["shaders/terrain-vertex.glsl"],
-        fragmentShader: assets.shaders["shaders/terrain-weights-fragment.glsl"],
-    }));
-    mesh.receiveShadow = true;
-    mesh.castShadow = true;
-    // Center around origin
-    return mesh;
-}
 
 /**
  * Packs an array of textures into a DataArrayTexture. Copies all data and does not change the original textures

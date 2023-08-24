@@ -16,12 +16,12 @@ export class MapEditor extends GUIBase {
         this.html = `
         <div class="ui-base ui-top-right">
             <button id="editor-select-mode" disabled>Select</button>
-            <button id="editor-insert-mode" disabled>Add entity</button>
+            <button id="editor-insert-mode" disabled>Place entity</button>
             <button id="editor-height-mode">Edit terrain height</button>
-            <button id="editor-texture-mode" disabled>Edit terrain texture</button>
+            <button id="editor-texture-mode">Edit terrain texture</button>
             <span class="ui-label ui-larger" id="editor-current-mode">height mode</span>
             <p>
-            <fieldset id="editor-terrain-options">
+            <fieldset id="editor-height-options">
                 <input type="radio" id="editor-terrain-raise-lower" name="editor-terrain-mode" value="raise-lower" checked />
                 <label for="plateau">Raise / lower</label>
                 <input type="radio" id="editor-terrain-smoothen" name="editor-terrain-mode" value="smoothen" />
@@ -31,6 +31,16 @@ export class MapEditor extends GUIBase {
                 <br>
                 <input type="range" id="editor-terrain-brush-radius" name="editor-terrain-brush-radius" min="1" max="15" value="10" />
                 <label for="editor-brush-radius">Brush radius</label>
+            </fieldset>
+
+            <fieldset id="editor-texture-options" class="invisible">
+                <select id="editor-terrain-texture" name="editor-terrain-texture">
+                    <!-- FIXME: hardcoded -->
+                    <option selected>sand</option>
+                    <option>dirt</option>
+                    <option>grass</option>
+                    <option>rock</option>
+                </select>
             </fieldset>
             <p>
             <span class="ui-label" id="editor-hint">Left-click to add height, right-click to remove it</span>
@@ -50,17 +60,20 @@ export class MapEditor extends GUIBase {
         this.addEvent("click", "editor-height-mode", () => {
             this.setText("editor-current-mode", "height mode");
             this.mode = MapEditorMode.HeightMode;
-            this.setVisible("editor-terrain-options", true);
+            this.setVisible("editor-height-options", true);
+            this.setVisible("editor-texture-options", false);
         });
         this.addEvent("click", "editor-texture-mode", () => {
             this.setText("editor-current-mode", "texture mode");
             this.mode = MapEditorMode.TextureMode;
-            this.setVisible("editor-terrain-options", false);
+            this.setVisible("editor-height-options", false);
+            this.setVisible("editor-texture-options", true);
         });
         this.addEvent("click", "editor-select-mode", () => {
             this.setText("editor-current-mode", "select mode");
             this.mode = MapEditorMode.SelectMode;
-            this.setVisible("editor-terrain-options", false);
+            this.setVisible("editor-height-options", false);
+            this.setVisible("editor-texture-options", false);
         });
         const terrainModeChangeHandler = (e) => {
             this.terrainMode = e.target.value as TerrainEditMode;
@@ -121,7 +134,7 @@ export class MapEditor extends GUIBase {
                     this.updateHeight(intersects[0]);
                     break;
                 case MapEditorMode.TextureMode:
-                    TODO:
+                    this.updateTexture(intersects[0]);
                     break;
             }
         }
@@ -175,6 +188,19 @@ export class MapEditor extends GUIBase {
         this.terrain.flush();
         // Update height values for all entities
         this.entityManager.updateHeights();
+    }
+
+    updateTexture(intersection: THREE.Intersection<THREE.Object3D<THREE.Event>>) {
+        const terrainTypeIndex = this.getSelectedIndex("editor-terrain-texture");
+
+        const localPoint = this.terrain.mesh.worldToLocal(intersection.point);
+
+        localPoint.x = Math.floor(localPoint.x / HEIGHTMAP_TILE_SCALE);
+        localPoint.z = Math.floor(localPoint.z / HEIGHTMAP_TILE_SCALE);
+
+        const center = new THREE.Vector2(localPoint.x, localPoint.z);
+
+        this.terrain.paintTexture(center, this.brushRadius, terrainTypeIndex);
     }
 }
 
