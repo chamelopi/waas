@@ -7,17 +7,15 @@ const HEIGHTMAP_HEIGHT_SCALE = 6.0;
 
 /**
  * Holds our terrain
- * 
  */
 class Terrain {
     public data: Uint8Array;
     public width: number;
     public height: number;
     public mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
-    public terrainTypesArray: THREE.DataArrayTexture;
-    public terrainWeightsArray: THREE.DataArrayTexture;
+    public terrainWeightsArray: Array<ImageData>;
 
-    constructor(imageData: ImageData, assets: AssetManager) {
+    constructor(imageData: ImageData, private assets: AssetManager) {
         this.data = new Uint8Array(imageData.width * imageData.height);
         
         let buffer = []
@@ -29,10 +27,11 @@ class Terrain {
 
         this.width = imageData.width;
         this.height = imageData.height;
-        this.createTerrainMesh(this.data, this.width, this.height, assets);
+
+        this.createTerrainMesh(this.data, this.width, this.height);
     }
 
-    createTerrainMesh(heightmapData: Uint8Array, width: number, height: number, assets: AssetManager) {
+    createTerrainMesh(heightmapData: Uint8Array, width: number, height: number) {
         let geometry = new THREE.BufferGeometry();
     
         // Create vertices from height map
@@ -78,25 +77,27 @@ class Terrain {
         geometry.computeVertexNormals();
     
         // FIXME: hardcoded
-        this.terrainTypesArray = packTextures([
+        const terrainTypesArray = packTextures([
             // The order of these is important and has to correspond to the weight layers
-            assets.textures["sand.jpg"],
-            assets.textures["dirt.png"],
-            assets.textures["grass.png"],
-            assets.textures["rock.jpg"],
+            this.assets.textures["sand.jpg"],
+            this.assets.textures["dirt.png"],
+            this.assets.textures["grass.png"],
+            this.assets.textures["rock.jpg"],
         ]);
-        this.terrainWeightsArray = packTextures([
-            assets.textures["weights_sand.png"],
-            assets.textures["weights_dirt.png"],
-            assets.textures["weights_grass.png"],
-            assets.textures["weights_rock.png"],
+        this.terrainWeightsArray = getImageDataArray([
+            this.assets.textures["weights_sand.png"],
+            this.assets.textures["weights_dirt.png"],
+            this.assets.textures["weights_grass.png"],
+            this.assets.textures["weights_rock.png"],
         ]);
+        
+        const terrainWeights = packImageData(this.terrainWeightsArray);
         
         // Initialize mesh with terrain shader
         const mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
             uniforms: {
-                terrainTypes: { value: this.terrainTypesArray },
-                weights: { value: this.terrainWeightsArray },
+                terrainTypes: { value: terrainTypesArray },
+                weights: { value: terrainWeights },
                 // FIXME: hardcoded
                 terrainTypeCount: { value: 4 },
                 // Parameters for map editor
@@ -106,8 +107,8 @@ class Terrain {
                 // Need to multiply by tile scale!
                 meshDimensions: { value: new THREE.Vector2(width, height).multiplyScalar(HEIGHTMAP_TILE_SCALE), },
             },
-            vertexShader: assets.shaders["shaders/terrain-vertex.glsl"],
-            fragmentShader: assets.shaders["shaders/terrain-weights-fragment.glsl"],
+            vertexShader: this.assets.shaders["shaders/terrain-vertex.glsl"],
+            fragmentShader: this.assets.shaders["shaders/terrain-weights-fragment.glsl"],
         }));
         mesh.receiveShadow = true;
         mesh.castShadow = true;
@@ -116,7 +117,7 @@ class Terrain {
     }
 
     /**
-     * Updates map-editor related uniforms
+     * Updates map-editor related uniforms to render the brush correctly
      */
     updateUniforms(showBrush: boolean, brushRadius: number, mousePos: THREE.Vector2) {
         this.mesh.material.uniforms.showBrush = { value: showBrush };
@@ -130,7 +131,7 @@ class Terrain {
         return this.data.at(dataIdx) / 255 * HEIGHTMAP_HEIGHT_SCALE;
     }
 
-    getHeightFromPosition(x: number, y: number) {
+    getHeightFromPosition(x: number, y: number): number {
         x = Math.floor(x / HEIGHTMAP_TILE_SCALE);
         y = Math.floor(y / HEIGHTMAP_TILE_SCALE);
         if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
@@ -147,7 +148,7 @@ class Terrain {
         ];
     }
 
-    randomPositionOnTerrain() {
+    randomPositionOnTerrain(): THREE.Vector3 {
         const x = this.width * Math.random();
         const y = this.height * Math.random();
         return new THREE.Vector3(x * HEIGHTMAP_TILE_SCALE, this.getHeightValue(Math.floor(x), Math.floor(y)), y * HEIGHTMAP_TILE_SCALE);
@@ -156,7 +157,7 @@ class Terrain {
     /**
      * Returns 3D world vector for 2D terrain position (includes height)
      */
-    toWorldPos(terrainPos: THREE.Vector2) {
+    toWorldPos(terrainPos: THREE.Vector2): THREE.Vector3 {
         return new THREE.Vector3(terrainPos.x, this.getHeightFromPosition(terrainPos.x, terrainPos.y), terrainPos.y);
     }
 
@@ -176,11 +177,57 @@ class Terrain {
      * Adds weight for a specific texture at the selected position, using a circular brush.
      * 
      * REMOVES weight for all other textures accordingly.
+     * 
+     * @param center the center position of the brush, in local 2D coordinates
+     * @param radius the radius of the brush
+     * @param terrainTypeIndex the index of the array layer in the weight texture array we want to edit (i.e. add to)
      */
     paintTexture(center: THREE.Vector2, brushRadius: number, terrainTypeIndex: number) {
-        throw new Error("Method not implemented.");
+        // Iterate a rectangle around the mouse position
+        for (let i = -brushRadius; i < brushRadius; i++) {
+            for (let j = -brushRadius; j < brushRadius; j++) {
+                const offset = new THREE.Vector2(center.x + i, center.y + j);
+
+                // Check if we are within the circle & in bounds
+                if (offset.x < 0 || offset.y < 0 || offset.x >= this.width || offset.y >= this.height) {
+                    break;
+                }
+                if (offset.distanceTo(center) <= brushRadius) {
+                    for (let layer = 0; layer < this.terrainWeightsArray.length; layer++) {
+                        const thisLayer = this.terrainWeightsArray[layer];
+                        // Scale the amount with the distance from center to get a nice blend
+                        const distFactor = 1 - (offset.distanceTo(center) / brushRadius)
+
+                        const arrayIdx = (offset.x + offset.y * thisLayer.width) * 4;
+                        // Max value is 255, so using something a little lower prevents sharp edges when we have a small brush radius
+                        const intensity = 200 * distFactor;
+
+                        // Add color & alpha for the desired layer, remove from all others
+                        if (terrainTypeIndex == layer) {
+                            // x4 because we have 4 channels including alpha
+                            // little endian -> first value is alpha!
+                            // ImageData is from 0 to 255, not 0.0 to 1.0!
+                            thisLayer.data[arrayIdx] += intensity;
+                            thisLayer.data[arrayIdx + 3] += intensity;
+                        } else {
+                            thisLayer.data[arrayIdx] -= intensity;
+                            thisLayer.data[arrayIdx + 3] -= intensity;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Pack the image data into the data array texture and transfer it to the GPU
+        const packed = packImageData(this.terrainWeightsArray);
+        this.mesh.material.uniforms['weights'] = { value: packed };
     }
 
+    /**
+     * Declares that the position attribute of the terrain mesh needs to be updated.
+     * This allows us to modify the height of many vertices at once, while only needing to send the
+     * modified data to the GPU once.
+     */
     flush() {
         this.mesh.geometry.getAttribute("position").needsUpdate = true;
     }
@@ -196,25 +243,17 @@ function getImageData(img: HTMLImageElement): ImageData {
     return ctx.getImageData(0, 0, img.width, img.height);
 }
 
+function getImageDataArray(textures: Array<THREE.Texture>): Array<ImageData> {
+    return textures.map(t => getImageData(t.image));
+}
 
-
-
-/**
- * Packs an array of textures into a DataArrayTexture. Copies all data and does not change the original textures
- */
-function packTextures(textures: Array<THREE.Texture>): THREE.DataArrayTexture {
-    // https://github.com/mrdoob/three.js/blob/master/examples/webgl2_materials_texture2darray.html
-    // https://threejs.org/docs/?q=texture#api/en/textures/DataArrayTexture
-
-    const imageDataArray = textures.map(t => getImageData(t.image));
-    const depth = textures.length;
+function packImageData(imageDataArray: Array<ImageData>): THREE.DataArrayTexture {
+    const depth = imageDataArray.length;
     const width = imageDataArray[0].width;
     const height = imageDataArray[0].height;
     const size = width * height;
     // x4 since a float/a color has 4 bytes
     const buffer = new Uint8Array(depth * size * 4);
-
-    console.log(`packing ${depth} textures (${width} x ${height}) into a data array texture with size ${buffer.length}`);
 
     for (let d = 0; d < depth; d++) {
         if (imageDataArray[d].data.length != size*4) {
@@ -228,6 +267,17 @@ function packTextures(textures: Array<THREE.Texture>): THREE.DataArrayTexture {
     texture.needsUpdate = true;
     
     return texture;
+}
+
+/**
+ * Packs an array of textures into a DataArrayTexture. Copies all data and does not change the original textures
+ */
+function packTextures(textures: Array<THREE.Texture>): THREE.DataArrayTexture {
+    // https://github.com/mrdoob/three.js/blob/master/examples/webgl2_materials_texture2darray.html
+    // https://threejs.org/docs/?q=texture#api/en/textures/DataArrayTexture
+
+    const imageDataArray = textures.map(t => getImageData(t.image));
+    return packImageData(imageDataArray);
 }
 
 async function loadTerrain(heightmapFilename: string, assets: AssetManager) {

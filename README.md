@@ -26,11 +26,12 @@ npm run build
 - Animated water
 - Skybox
 - Doodad objects on the map (tree)
-- Terrain texturing (rework in progress)
+- Textured terrain
 - Height editing
   - add/remove terrain
   - create plateau
   - smoothen heights
+- Texture painting (with texture weight maps, supports arbitrary number of terrain types)
 
 ### Next TODOs
 
@@ -39,5 +40,7 @@ npm run build
   - then we can use the phong lighting chunk for the actual lighting in the fragment shader
   - we will need to include the uniforms of the Phong material, too: https://github.com/mrdoob/three.js/blob/master/examples/webgl_gpgpu_water.html#L402
 - Implement camera zoom
-- Texture painting (needs a different, more complex terrain shader + modification with compute shader)
-- Placing doodads
+- Placing of doodads/entities & selection
+- Make terrain types configurable (currently names are hardcoded in HTML + terrain.ts)
+- Downloading/saving of maps (heightmap + weight map + placed entities)
+- Uploading/loading of maps

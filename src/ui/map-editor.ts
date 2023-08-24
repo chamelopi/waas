@@ -21,6 +21,11 @@ export class MapEditor extends GUIBase {
             <button id="editor-texture-mode">Edit terrain texture</button>
             <span class="ui-label ui-larger" id="editor-current-mode">height mode</span>
             <p>
+            <fieldset id="editor-terrain-tool-options">
+                <input type="range" id="editor-terrain-brush-radius" name="editor-terrain-brush-radius" min="1" max="15" value="10" />
+                <label for="editor-brush-radius">Brush radius</label>
+            </fieldset>
+
             <fieldset id="editor-height-options">
                 <input type="radio" id="editor-terrain-raise-lower" name="editor-terrain-mode" value="raise-lower" checked />
                 <label for="plateau">Raise / lower</label>
@@ -28,13 +33,11 @@ export class MapEditor extends GUIBase {
                 <label for="plateau">Smoothen</label>
                 <input type="radio" id="editor-terrain-plateau" name="editor-terrain-mode" value="plateau" />
                 <label for="plateau">Plateau</label>
-                <br>
-                <input type="range" id="editor-terrain-brush-radius" name="editor-terrain-brush-radius" min="1" max="15" value="10" />
-                <label for="editor-brush-radius">Brush radius</label>
             </fieldset>
 
             <fieldset id="editor-texture-options" class="invisible">
                 <select id="editor-terrain-texture" name="editor-terrain-texture">
+                    <!-- order has to match code in terrain.ts! -->
                     <!-- FIXME: hardcoded -->
                     <option selected>sand</option>
                     <option>dirt</option>
@@ -62,18 +65,21 @@ export class MapEditor extends GUIBase {
             this.mode = MapEditorMode.HeightMode;
             this.setVisible("editor-height-options", true);
             this.setVisible("editor-texture-options", false);
+            this.setText("editor-hint", this.getEditorHint());
         });
         this.addEvent("click", "editor-texture-mode", () => {
             this.setText("editor-current-mode", "texture mode");
             this.mode = MapEditorMode.TextureMode;
             this.setVisible("editor-height-options", false);
             this.setVisible("editor-texture-options", true);
+            this.setText("editor-hint", this.getEditorHint());
         });
         this.addEvent("click", "editor-select-mode", () => {
             this.setText("editor-current-mode", "select mode");
             this.mode = MapEditorMode.SelectMode;
             this.setVisible("editor-height-options", false);
             this.setVisible("editor-texture-options", false);
+            this.setText("editor-hint", this.getEditorHint());
         });
         const terrainModeChangeHandler = (e) => {
             this.terrainMode = e.target.value as TerrainEditMode;
@@ -156,7 +162,7 @@ export class MapEditor extends GUIBase {
         // Iterate a rectangle around the mouse position
         for (let i = -radius; i < radius; i++) {
             for (let j = -radius; j < radius; j++) {
-                const offset = new THREE.Vector2(localPoint.x + i, localPoint.z + j);
+                const offset = new THREE.Vector2(center.x + i, center.y + j);
                 
                 // Check if we are within the circle
                 if (offset.distanceTo(center) <= radius) {
@@ -176,7 +182,7 @@ export class MapEditor extends GUIBase {
                         this.terrain.setHeight(offset.x, offset.y, avg);
                     } else {
                         // Scale the height amount with the distance from center to get a nice gradual ascent or descent
-                        const distFactor = 1 - (offset.distanceTo(center) / radius)
+                        const distFactor = 1 - (offset.distanceTo(center) / radius);
                         // Get original height value to transform it
                         const heightValue = this.terrain.getHeightValue(offset.x, offset.y);
 
@@ -200,6 +206,7 @@ export class MapEditor extends GUIBase {
 
         const center = new THREE.Vector2(localPoint.x, localPoint.z);
 
+        // TODO: Move this code to editor logic?
         this.terrain.paintTexture(center, this.brushRadius, terrainTypeIndex);
     }
 }
