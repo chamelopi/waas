@@ -44,8 +44,9 @@ camera.position.z = center[1];
 const skybox = makeSkybox(assets.textures, "envmap_miramar", "miramar", "png");
 scene.add(skybox);
 
-// 128 segments in each direction, so that we have some vertices to transform
-const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64, 128, 128),
+// Add some segments in each direction, so that we have some vertices to transform
+const WATER_DIMS = 128;
+const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(WATER_DIMS, WATER_DIMS, WATER_DIMS*2, WATER_DIMS*2),
     new THREE.ShaderMaterial({
         uniforms: {
             waterTexture: { value: assets.textures["water.png"] },
@@ -55,8 +56,7 @@ const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(64, 64, 128, 128),
         vertexShader: assets.shaders["shaders/water-vertex.glsl"],
         fragmentShader: assets.shaders["shaders/water-fragment.glsl"],
         transparent: true,
-    }));
-    //new THREE.MeshBasicMaterial({ map: assets.textures["water.png"], transparent: true, opacity: 0.65 }));
+}));
 water.position.set(32, 0.6, 32);
 water.rotation.x = -Math.PI / 2;
 scene.add(water);

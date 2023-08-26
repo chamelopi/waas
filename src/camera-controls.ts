@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { Controls } from "./controls";
+import { Terrain } from "./terrain/terrain";
 
 const CAMERA_LEFT = "a";
 const CAMERA_RIGHT = "d";
@@ -18,12 +20,11 @@ const CAMERA_Y_OFFSET = 8;
  */
 export class CameraControls {
 
-    constructor(camera, controls) {
-        /// Underlying THREE.Camera that is being controlled
-        this.camera = camera;
+    private enabled: boolean;
+
+    constructor(private camera: THREE.Camera, private controls: Controls) {
         /// Determines if the controls should be active or not 
         this.enabled = true;
-        this.controls = controls;
 
         document.addEventListener("keyup", e => this.keyUpListener(e));
     }
@@ -44,7 +45,7 @@ export class CameraControls {
         }
     }
 
-    update(dt, terrain) {
+    update(dt: number, terrain: Terrain) {
         if (!this.enabled) return;
 
         const keystate = this.controls.getKeyState();

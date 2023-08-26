@@ -87,7 +87,7 @@ export class Controls {
     /**
      * Returns state for a specified key or all keys
      */
-    getKeyState(key: any): boolean {
+    getKeyState(key?: any): boolean {
         if (key) {
             return !!(this.keystate[key]);
         } else {

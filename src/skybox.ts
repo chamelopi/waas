@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-const makeSkybox = (textures, path, name, ext) => {
+const makeSkybox = (textures: Record<string, THREE.Texture>, path: string, name: string, ext: string) => {
     const sides = ["ft", "bk", "up", "dn", "rt", "lf"];
     let materials = [];
 

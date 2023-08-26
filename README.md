@@ -44,3 +44,4 @@ npm run build
 - Make terrain types configurable (currently names are hardcoded in HTML + terrain.ts)
 - Downloading/saving of maps (heightmap + weight map + placed entities)
 - Uploading/loading of maps
+- Make water transparency dependent on terrain height (i.e. deeper water is less transparent)
