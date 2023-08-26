@@ -116,12 +116,15 @@ class Terrain {
             fragmentShader: this.assets.shaders["shaders/terrain-weights-fragment.glsl"],
         }));
         mesh.material.lights = true;
+        // Fixes weird 
+        mesh.material.shadowSide = THREE.FrontSide;
         mesh.material.uniforms['specular'].value = new THREE.Color(0x111111);
         mesh.material.uniforms['shininess'].value = 50;
         mesh.material.uniforms['opacity'].value = 1.0;
 
         mesh.receiveShadow = true;
         mesh.castShadow = true;
+        mesh.frustumCulled = false;
         
         this.mesh = mesh;
         this.updateHeightmap();

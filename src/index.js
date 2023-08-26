@@ -1,29 +1,22 @@
 import * as THREE from "three";
-import { makeSkybox } from "./skybox";
 import { loadAssets } from "./assetman";
-import { loadTerrain, randomPositionOnTerrain, getCenterOfTerrain } from "./terrain/terrain"
 import { CameraControls } from "./camera-controls";
-import { Doodads } from "./doodads";
 import { Controls } from "./controls";
-import { GUIManager } from "./ui/gui-manager";
 import { EntityManager } from "./entity-manager";
+import { setupLights, setupWater } from "./environment";
+import { makeSkybox } from "./skybox";
+import { loadTerrain } from "./terrain/terrain";
+import { GUIManager } from "./ui/gui-manager";
 
 const scene = new THREE.Scene();
 
-//scene.add(new THREE.HemisphereLight());
-const sun = new THREE.DirectionalLight(0xffffcc, 1.3);
-sun.position.set(25.6, 10, 25.6);
-sun.target.position.set(-5, 0, 0);
-scene.add(new THREE.DirectionalLightHelper(sun));
-scene.add(sun);
-
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-
 camera.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 4);
 const controls = new Controls(renderer.domElement);
 const camControl = new CameraControls(camera, controls);
@@ -44,26 +37,12 @@ const center = terrain.getCenterOfTerrain();
 camera.position.x = center[0];
 camera.position.z = center[1];
 
-// TODO: Refactor skybox + water mesh into 'basic env setup function'
-const skybox = makeSkybox(assets.textures, "envmap_miramar", "miramar", "png");
-scene.add(skybox);
-
-// Add some segments in each direction, so that we have some vertices to transform
-const WATER_DIMS = 128;
-const water = new THREE.Mesh(new THREE.PlaneBufferGeometry(WATER_DIMS, WATER_DIMS, WATER_DIMS*2, WATER_DIMS*2),
-    new THREE.ShaderMaterial({
-        uniforms: {
-            waterTexture: { value: assets.textures["water.png"] },
-            perlin: { value: assets.textures["perlin.png"] },
-            time: { value: 0.0 },
-        },
-        vertexShader: assets.shaders["shaders/water-vertex.glsl"],
-        fragmentShader: assets.shaders["shaders/water-fragment.glsl"],
-        transparent: true,
-}));
-water.position.set(32, 0.6, 32);
-water.rotation.x = -Math.PI / 2;
-scene.add(water);
+// Adds ambient light & sunlight
+setupLights(scene);
+// Create skybox
+scene.add(makeSkybox(assets.textures, "envmap_miramar", "miramar", "png"));
+// Create water
+const water = setupWater(scene, assets);
 
 // TODO: Create objects based on config/map file or sth
 const entityManager = new EntityManager(assets, terrain);

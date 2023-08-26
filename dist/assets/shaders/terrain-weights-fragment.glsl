@@ -55,7 +55,9 @@ uniform float opacity;
 float getWeight(int terrainType, vec2 terrainUv) {
     vec4 textureValue = texture(weights, vec3(terrainUv, terrainType));
 
-    // TODO: Is this still correct for weights edited via our editor functionality? Or just for manual painting?
+    // We could use any of the 4 channels of the texture (or use a single red channel),
+    // but I've decided on alpha because that allows me to easily paint weight textures in a program like GIMP
+    // with the pen tool which blends the color with a certain alpha value at the edges.
     return textureValue.a;
 }
 
@@ -69,8 +71,7 @@ void main() {
     vec2 terrainUv = terrainPos / meshDimensions;
 
     vec4 color = vec4(0.0);
-    
-    // Weighted sum of colors
+    // Weighted sum of colors to blend different terrain types
     float sum = 0.0;
     for (int i = 0; i < terrainTypeCount; ++i) {
         // get weight for this terrain type at the position (i.e. which type is it, but blended)
@@ -92,11 +93,11 @@ void main() {
 
 
     // three.js specific
-    
     {
         #include <clipping_planes_fragment>
 
-        // Uses our color calculation from before
+        // Uses our color calculation from above as base color value. This overwrites the 'diffuse' uniform,
+        // i.e. it is unusable with this shader. (but also not needed)
         vec4 diffuseColor = vec4( color.rgb, opacity );
         ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
         vec3 totalEmissiveRadiance = emissive;
@@ -123,6 +124,7 @@ void main() {
         vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;
 
         #include <envmap_fragment>
+        // gl_FragColor gets set here
         #include <output_fragment>
         #include <tonemapping_fragment>
         #include <encodings_fragment>
@@ -130,10 +132,5 @@ void main() {
         #include <premultiplied_alpha_fragment>
         #include <dithering_fragment>
     }
-    
     // three.js specific END
-
-    gl_FragColor = color;
-    //gl_FragColor = vec4(vNormal, 1.0);
-    //gl_FragColor = vec4(vHeight / 6.0, 0.0, 0.0, 1.0);
 }
