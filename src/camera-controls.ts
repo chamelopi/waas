@@ -14,6 +14,7 @@ const CAMERA_ENABLE = "c";
 const CAMERA_SPEED = 0.005;
 const CAMERA_ROT_SPEED = 0.002 * Math.PI/4
 const CAMERA_Y_OFFSET = 8;
+const CAMERA_ZOOM_SPEED = 0.0005;
 
 /**
  * Basic RTS camera control with WASD
@@ -21,12 +22,18 @@ const CAMERA_Y_OFFSET = 8;
 export class CameraControls {
 
     private enabled: boolean;
+    private zoomFactor: number;
 
     constructor(private camera: THREE.Camera, private controls: Controls) {
         /// Determines if the controls should be active or not 
         this.enabled = true;
+        this.zoomFactor = 1.0;
 
         document.addEventListener("keyup", e => this.keyUpListener(e));
+
+        document.addEventListener("wheel", (e) => {
+            this.zoomFactor = Math.min(2.0, Math.max(0.5, this.zoomFactor + e.deltaY * CAMERA_ZOOM_SPEED));
+        })
     }
 
     keyUpListener(ev) {
@@ -92,6 +99,6 @@ export class CameraControls {
 
         // Set height based on terrain, so that we can look on the top of high mountains etc.
         let height = terrain.getHeightFromPosition(this.camera.position.x, this.camera.position.z);
-        this.camera.position.y = height > 0 ? height + CAMERA_Y_OFFSET : CAMERA_Y_OFFSET;
+        this.camera.position.y = (Math.max(height, 0) + CAMERA_Y_OFFSET) * this.zoomFactor;
     }
 }

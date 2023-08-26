@@ -22,7 +22,7 @@ npm run build
 
 ### Features
 
-- Camera movement with WASD, turning with Q and E, reset rotation with SPACE
+- Camera movement with WASD, turning with Q and E, reset rotation with SPACE, zoom with mouse wheel
 - Animated water
 - Skybox
 - Doodad objects on the map (tree)
@@ -36,7 +36,6 @@ npm run build
 
 ### Next TODOs
 
-- Implement camera zoom
 - Placing of doodads/entities & selection
 - Make terrain types configurable (currently names are hardcoded in HTML + terrain.ts)
 - Downloading/saving of maps (heightmap + weight map + placed entities)
