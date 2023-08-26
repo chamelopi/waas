@@ -10,8 +10,12 @@ import { EntityManager } from "./entity-manager";
 
 const scene = new THREE.Scene();
 
-const hemLight = new THREE.HemisphereLight();
-scene.add(hemLight)
+//scene.add(new THREE.HemisphereLight());
+const sun = new THREE.DirectionalLight(0xffffcc, 1.3);
+sun.position.set(25.6, 10, 25.6);
+sun.target.position.set(-5, 0, 0);
+scene.add(new THREE.DirectionalLightHelper(sun));
+scene.add(sun);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);

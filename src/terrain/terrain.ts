@@ -14,6 +14,7 @@ class Terrain {
     public height: number;
     public mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
     public terrainWeightsArray: Array<ImageData>;
+    private heightmapTexture: THREE.DataTexture;
 
     constructor(imageData: ImageData, private assets: AssetManager) {
         this.data = new Uint8Array(imageData.width * imageData.height);
@@ -27,6 +28,7 @@ class Terrain {
 
         this.width = imageData.width;
         this.height = imageData.height;
+        this.heightmapTexture = new THREE.DataTexture(this.data, this.width, this.height, THREE.RedFormat);
 
         this.createTerrainMesh(this.data, this.width, this.height);
     }
@@ -95,25 +97,34 @@ class Terrain {
         
         // Initialize mesh with terrain shader
         const mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
-            uniforms: {
-                terrainTypes: { value: terrainTypesArray },
-                weights: { value: terrainWeights },
-                // FIXME: hardcoded
-                terrainTypeCount: { value: 4 },
-                // Parameters for map editor
-                showBrush: { value: true },
-                brushRadius: { value: 15, },
-                mousePos: { value: new THREE.Vector2(0, 0), },
-                // Need to multiply by tile scale!
-                meshDimensions: { value: new THREE.Vector2(width, height).multiplyScalar(HEIGHTMAP_TILE_SCALE), },
-            },
+            uniforms: THREE.UniformsUtils.merge([
+                THREE.ShaderLib.phong.uniforms,
+                {
+                    terrainTypes: { value: terrainTypesArray },
+                    weights: { value: terrainWeights },
+                    // FIXME: hardcoded
+                    terrainTypeCount: { value: 4 },
+                    // Parameters for map editor
+                    showBrush: { value: true },
+                    brushRadius: { value: 15, },
+                    mousePos: { value: new THREE.Vector2(0, 0), },
+                    // Need to multiply by tile scale!
+                    meshDimensions: { value: new THREE.Vector2(width, height).multiplyScalar(HEIGHTMAP_TILE_SCALE), },
+                    heightmapTexture: { value: null },
+                }]),
             vertexShader: this.assets.shaders["shaders/terrain-vertex.glsl"],
             fragmentShader: this.assets.shaders["shaders/terrain-weights-fragment.glsl"],
         }));
+        mesh.material.lights = true;
+        mesh.material.uniforms['specular'].value = new THREE.Color(0x111111);
+        mesh.material.uniforms['shininess'].value = 50;
+        mesh.material.uniforms['opacity'].value = 1.0;
+
         mesh.receiveShadow = true;
         mesh.castShadow = true;
         
         this.mesh = mesh;
+        this.updateHeightmap();
     }
 
     /**
@@ -230,6 +241,20 @@ class Terrain {
      */
     flush() {
         this.mesh.geometry.getAttribute("position").needsUpdate = true;
+
+        this.updateHeightmap();
+    }
+    
+    /**
+     * Updates the heightmap texture with all height changes (required for normal calculation).
+     * 
+     * We need this texture to calculate the normals
+     */
+    updateHeightmap() {
+        this.heightmapTexture.image.data.set(this.data);
+        this.heightmapTexture.needsUpdate = true;
+        this.mesh.material.uniforms['heightmapTexture'].value = this.heightmapTexture;
+        this.mesh.material.needsUpdate = true;
     }
 }
 
