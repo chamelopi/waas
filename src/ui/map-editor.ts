@@ -19,6 +19,7 @@ export class MapEditor extends GUIBase {
             <button id="editor-insert-mode" disabled>Place entity</button>
             <button id="editor-height-mode">Edit terrain height</button>
             <button id="editor-texture-mode">Edit terrain texture</button>
+            <button id="editor-save">Save map</button>
             <span class="ui-label ui-larger" id="editor-current-mode">height mode</span>
             <p>
             <fieldset id="editor-terrain-tool-options">
@@ -91,6 +92,10 @@ export class MapEditor extends GUIBase {
         this.addEvent("change", "editor-terrain-brush-radius", () => {
             this.brushRadius = parseInt(this.getValue("editor-terrain-brush-radius"));
         });
+
+        this.addEvent("click", "editor-save", () => {
+            this.terrain.save();
+        })
     }
 
     onHide(): void {

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import { AssetManager } from "../assetman";
+import { encode } from "fast-png";
 
 const HEIGHTMAP_TILE_SCALE = 0.1;
 const HEIGHTMAP_HEIGHT_SCALE = 6.0;
@@ -16,6 +17,10 @@ class Terrain {
     public terrainWeightsArray: Array<ImageData>;
     private heightmapTexture: THREE.DataTexture;
 
+    // TODO: Abstract texture/asset loading away so that we can load the map from
+    // - remote assets
+    // - uploaded zip (?) file
+    // - local storage? (do we need that)
     constructor(imageData: ImageData, private assets: AssetManager) {
         this.data = new Uint8Array(imageData.width * imageData.height);
         
@@ -247,6 +252,24 @@ class Terrain {
 
         this.updateHeightmap();
     }
+
+    save() {
+        // TODO: Do the same for all weight maps
+        const heightmapImage = encode({
+            data: this.data,
+            width: this.width,
+            height: this.height,
+            depth: 8,
+            channels: 1,
+        });
+
+        // TODO: zip all images together and download the zip file
+        // TODO: store entities & their positions as JSON and pack them into the zip, too
+
+        const blob = new Blob([heightmapImage], { type: "image/png" });
+
+        download(URL.createObjectURL(blob), "heightmap.png");
+    }
     
     /**
      * Updates the heightmap texture with all height changes (required for normal calculation).
@@ -313,6 +336,16 @@ async function loadTerrain(heightmapFilename: string, assets: AssetManager) {
     const imageData = getImageData(img);
 
     return new Terrain(imageData, assets);
+}
+
+function download(url: string, filename: string) {
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
 }
 
 export {
