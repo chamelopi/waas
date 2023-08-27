@@ -7,35 +7,51 @@ const HEIGHTMAP_TILE_SCALE = 0.1;
 const HEIGHTMAP_HEIGHT_SCALE = 6.0;
 
 /**
- * Holds our terrain
+ * Responsible for terrain mesh creation & updates
  */
 class Terrain {
-    public data: Uint8Array;
+    public heightData: Uint8Array;
     public width: number;
     public height: number;
     public mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
-    public terrainWeightsArray: Array<ImageData>;
+    private terrainWeightsArray: Array<ImageData>;
+    private terrainTypesArray: THREE.DataArrayTexture;
     private heightmapTexture: THREE.DataTexture;
 
     // TODO: Abstract texture/asset loading away so that we can load the map from
     // - remote assets
     // - uploaded zip (?) file
     // - local storage? (do we need that)
-    constructor(imageData: ImageData, private assets: AssetManager) {
-        this.data = new Uint8Array(imageData.width * imageData.height);
+    constructor(heightmapImage: ImageData, private assets: AssetManager) {
+        this.heightData = new Uint8Array(heightmapImage.width * heightmapImage.height);
         
         let buffer = []
-        for (let i = 0; i < imageData.width * imageData.height; i++) {
+        for (let i = 0; i < heightmapImage.width * heightmapImage.height; i++) {
             // we can use just the red pixel here, since our source image is greyscale
-            buffer.push(imageData.data.at(i * 4));
+            buffer.push(heightmapImage.data.at(i * 4));
         }
-        this.data.set(buffer);
+        this.heightData.set(buffer);
 
-        this.width = imageData.width;
-        this.height = imageData.height;
-        this.heightmapTexture = new THREE.DataTexture(this.data, this.width, this.height, THREE.RedFormat);
+        // FIXME: hardcoded
+        this.terrainTypesArray = packTextures([
+            // The order of these is important and has to correspond to the weight layers
+            assets.textures["sand.jpg"],
+            assets.textures["dirt.png"],
+            assets.textures["grass.png"],
+            assets.textures["rock.jpg"],
+        ]);
+        this.terrainWeightsArray = getImageDataArray([
+            assets.textures["weights_sand.png"],
+            assets.textures["weights_dirt.png"],
+            assets.textures["weights_grass.png"],
+            assets.textures["weights_rock.png"],
+        ]);
 
-        this.createTerrainMesh(this.data, this.width, this.height);
+        this.width = heightmapImage.width;
+        this.height = heightmapImage.height;
+        this.heightmapTexture = new THREE.DataTexture(this.heightData, this.width, this.height, THREE.RedFormat);
+
+        this.createTerrainMesh(this.heightData, this.width, this.height);
     }
 
     createTerrainMesh(heightmapData: Uint8Array, width: number, height: number) {
@@ -82,21 +98,6 @@ class Terrain {
         geometry.setIndex(indices);
     
         geometry.computeVertexNormals();
-    
-        // FIXME: hardcoded
-        const terrainTypesArray = packTextures([
-            // The order of these is important and has to correspond to the weight layers
-            this.assets.textures["sand.jpg"],
-            this.assets.textures["dirt.png"],
-            this.assets.textures["grass.png"],
-            this.assets.textures["rock.jpg"],
-        ]);
-        this.terrainWeightsArray = getImageDataArray([
-            this.assets.textures["weights_sand.png"],
-            this.assets.textures["weights_dirt.png"],
-            this.assets.textures["weights_grass.png"],
-            this.assets.textures["weights_rock.png"],
-        ]);
         
         const terrainWeights = packImageData(this.terrainWeightsArray);
         
@@ -105,7 +106,7 @@ class Terrain {
             uniforms: THREE.UniformsUtils.merge([
                 THREE.ShaderLib.phong.uniforms,
                 {
-                    terrainTypes: { value: terrainTypesArray },
+                    terrainTypes: { value: this.terrainTypesArray },
                     weights: { value: terrainWeights },
                     // FIXME: hardcoded
                     terrainTypeCount: { value: 4 },
@@ -121,7 +122,7 @@ class Terrain {
             fragmentShader: this.assets.shaders["shaders/terrain-weights-fragment.glsl"],
         }));
         mesh.material.lights = true;
-        // Fixes weird 
+        // Fixes weird artifacts in the shadows behind hills
         mesh.material.shadowSide = THREE.FrontSide;
         mesh.material.uniforms['specular'].value = new THREE.Color(0x111111);
         mesh.material.uniforms['shininess'].value = 50;
@@ -147,7 +148,7 @@ class Terrain {
     getHeightValue(x: number, y: number): number {
         const dataIdx = (y * this.width + x);
         // Transform the [0, 255] interval into a float & scale it with the correct factor
-        return this.data.at(dataIdx) / 255 * HEIGHTMAP_HEIGHT_SCALE;
+        return this.heightData.at(dataIdx) / 255 * HEIGHTMAP_HEIGHT_SCALE;
     }
 
     getHeightFromPosition(x: number, y: number): number {
@@ -186,7 +187,7 @@ class Terrain {
     setHeight(x: number, y: number, h: number) {
         const dataIdx = y * this.width + x;
         if (dataIdx >= 0 && dataIdx <= (this.width * this.height) && (h >= 0 && h <= HEIGHTMAP_HEIGHT_SCALE)) {
-            this.data[dataIdx] = h * 255 / HEIGHTMAP_HEIGHT_SCALE;
+            this.heightData[dataIdx] = h * 255 / HEIGHTMAP_HEIGHT_SCALE;
             const positions = this.mesh.geometry.getAttribute("position");
             positions.setY(dataIdx, h);
         }
@@ -256,7 +257,7 @@ class Terrain {
     save() {
         // TODO: Do the same for all weight maps
         const heightmapImage = encode({
-            data: this.data,
+            data: this.heightData,
             width: this.width,
             height: this.height,
             depth: 8,
@@ -277,7 +278,7 @@ class Terrain {
      * We need this texture to calculate the normals
      */
     updateHeightmap() {
-        this.heightmapTexture.image.data.set(this.data);
+        this.heightmapTexture.image.data.set(this.heightData);
         this.heightmapTexture.needsUpdate = true;
         this.mesh.material.uniforms['heightmapTexture'].value = this.heightmapTexture;
         this.mesh.material.needsUpdate = true;
